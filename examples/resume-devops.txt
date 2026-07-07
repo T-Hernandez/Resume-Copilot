@@ -1,0 +1,9 @@
+Name: Marta López
+Title: DevOps Engineer
+Summary: Ingeniería de infra y CI/CD con experiencia en AWS y Kubernetes.
+Skills: AWS, Kubernetes, Terraform, Docker, CI/CD
+Experience:
+- CloudOps — DevOps Engineer (2019-2024)
+  - Automatización de despliegues con Terraform y pipelines CI/CD
+Projects:
+- Infra C: migración a EKS y automatización de despliegues

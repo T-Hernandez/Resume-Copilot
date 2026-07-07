@@ -1,0 +1,5 @@
+Title: Machine Learning Engineer
+Description: Buscamos ingeniero de ML con experiencia en PyTorch y modelos de NLP/vision.
+Required Skills: Python; PyTorch; Machine Learning
+MinExperienceYears: 3
+Keywords: NLP; Deep Learning; Model Training

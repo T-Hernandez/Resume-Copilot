@@ -1,0 +1,10 @@
+Name: Luis García
+Title: Senior Backend Engineer
+Summary: Backend engineer especializado en Node.js y bases de datos relacionales.
+Skills: Node.js, TypeScript, PostgreSQL, Docker, REST, SQL
+Experience:
+- Beta Systems — Senior Backend Engineer (2016-2024)
+  - Diseñé APIs en Node.js y optimicé consultas SQL
+  - Dockerizado servicios y migré a PostgreSQL
+Projects:
+- Servicio B: microservicio en Node.js con PostgreSQL

@@ -1,0 +1,6 @@
+Title: Frontend React Developer
+Description: Buscamos desarrollador/a frontend con experiencia en React y TypeScript para construir aplicaciones web.
+Required Skills: React; TypeScript; HTML; CSS
+Preferred: Next.js; Testing
+MinExperienceYears: 2
+Keywords: SPA; Responsive; Accessibility

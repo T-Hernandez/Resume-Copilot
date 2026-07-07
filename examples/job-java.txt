@@ -1,0 +1,5 @@
+Title: Senior Java Backend Engineer
+Description: Equipo de plataforma busca ingeniero backend con experiencia en Java y Spring Boot.
+Required Skills: Java; Spring Boot; PostgreSQL
+MinExperienceYears: 4
+Keywords: Microservices; SQL; APIs
