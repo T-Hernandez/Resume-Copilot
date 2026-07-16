@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { DefaultSkillNormalizer } from '../../01-domain/services/skill-normalizer';
 
 type Given = { resumePath?: string; jobPath?: string; resumeText?: string; jobText?: string };
 
@@ -21,8 +22,9 @@ export async function runScenario(given: Given) {
   const job = parseJobSimple(jobText);
 
   // normalization: extract skills and canonicalize
-  const resumeSkills = normalizeSkills(extractSkillsSimple(resumeText));
-  const jobReq = normalizeSkills(job.requiredSkills || []);
+  const normalizer = new DefaultSkillNormalizer();
+  const resumeSkills = normalizer.normalizeSkills(extractSkillsSimple(resumeText)).map(s => s.canonical || s.raw);
+  const jobReq = normalizer.normalizeSkills(job.requiredSkills || []).map(s => s.canonical || s.raw);
 
   // matching: count overlaps
   const matched = jobReq.filter(s => resumeSkills.includes(s));
@@ -32,24 +34,32 @@ export async function runScenario(given: Given) {
   // experience: naive years matching
   const expScore = Math.min(100, Math.round((resume.years || 0) / (job.minExperienceYears || 1) * 100));
 
-  const breakdown: Record<string, number> = { skills: skillsScore, experience: expScore, education: 100 };
+  const breakdown: Record<string, number> = { skills: skillsScore, experience: expScore, education: 100, keywords: 100, certifications: 100, languages: 100 };
   const weights = { skills: 0.4, experience: 0.25, education: 0.1, keywords: 0.15, certifications: 0.05, languages: 0.05 };
-  let overall = 0;
-  for (const k of Object.keys(breakdown)) {
-    overall += (breakdown[k] || 0) * (weights as any)[k];
+  let weightedSum = 0;
+  let totalWeight = 0;
+  for (const [k, weight] of Object.entries(weights)) {
+    const value = breakdown[k] ?? 100;
+    weightedSum += value * (weight as number);
+    totalWeight += (weight as number);
   }
-  overall = Math.round(overall);
+  const overall = Math.round(weightedSum / totalWeight);
 
   const analysis = {
     overall,
     breakdown,
     matches: matched.map((s: string, i: number) => ({ id: `m_${i}`, type: 'skill', resumeRef: s, jobRef: s, score: 100, confidence: 90, reason: 'Exact match', evidence: ['Skills section'] })),
     gaps: missing,
-    confidence: Math.round((resume.textQuality || 80 + 0)),
+    confidence: Math.round((resume.textQuality || 80)),
     metadata: { executor: 'spec-harness-v0' }
   } as any;
 
   return analysis;
+}
+
+function normalizeSkills(list: string[]) {
+  const normalizer = new DefaultSkillNormalizer();
+  return normalizer.normalizeSkills(list).map(s => s.canonical || s.raw);
 }
 
 function parseResumeSimple(text: string) {
@@ -75,12 +85,3 @@ function extractSkillsSimple(text: string) {
   return skillsLine.split(':')[1]?.split(/[,;]+/)?.map(s => s.trim())?.filter(Boolean) || [];
 }
 
-function normalizeSkills(list: string[]) {
-  return list.map(s => {
-    const t = s.toLowerCase().replace(/\.+/g, '').replace(/js$/, 'js').trim();
-    if (t === 'reactjs' || t === 'react.js') return 'react';
-    if (t === 'node' || t === 'nodejs' || t === 'node.js') return 'node.js';
-    if (t === 'postgres' || t === 'postgresql') return 'postgresql';
-    return t;
-  });
-}

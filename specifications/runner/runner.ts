@@ -5,6 +5,7 @@ export type ScenarioDef = {
   name: string;
   given: Given;
   expect: Expect;
+  rationale?: string[];
 };
 
 const scenarios: ScenarioDef[] = [];
@@ -69,7 +70,13 @@ export async function runAll() {
           break;
         }
       }
-      if (okAll) console.log('OK');
+      if (okAll) {
+        if (s.rationale?.length) {
+          console.log(`OK (${s.rationale.join(' | ')})`);
+        } else {
+          console.log('OK');
+        }
+      }
       if (!okAll) failed++;
     } catch (err) {
       failed++;

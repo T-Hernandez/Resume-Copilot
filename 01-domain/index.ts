@@ -16,6 +16,7 @@ export * from './value-objects/recommendation';
 export * from './services/normalize-resume';
 export * from './services/extract-skills';
 export * from './services/compare-skill';
+export * from './services/skill-normalizer';
 export * from './services/match-resume-to-job';
 export * from './services/calculate-subscore';
 export * from './services/calculate-overall-score';

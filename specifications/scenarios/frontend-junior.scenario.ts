@@ -2,11 +2,16 @@ import { Scenario } from '../runner/runner';
 
 Scenario({
   name: 'Frontend Junior matches React Job',
-  given: { resumePath: '../../examples/resume-frontend-junior.txt', jobPath: '../../examples/job-react.txt' },
+  given: { resumePath: 'examples/resume-frontend-junior.txt', jobPath: 'examples/job-react.txt' },
   expect: {
-    'overall': '>= 90',
+    overall: '>= 90',
     'breakdown.skills': '>= 90',
-    'gaps.length': '== 0', // ensure no missing skills
-    'confidence': '>= 50'
-  }
+    'gaps.length': '== 0',
+    confidence: '>= 50'
+  },
+  rationale: [
+    'The resume has React-focused experience and projects.',
+    'The job requires React and related frontend skills.',
+    'The match should be strong because required skills overlap and experience is compatible.'
+  ]
 });

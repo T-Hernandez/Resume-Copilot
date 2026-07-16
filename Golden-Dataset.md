@@ -16,10 +16,23 @@ Propósito: conjunto inmutable de ejemplos (resumes y jobs) y resultados esperad
 - `resume-backend-senior.txt` vs `job-java.txt` → overall >= 90
 - `resume-devops.txt` vs (devops job) → overall >= 90
 
+## Coverage snapshot
+- [x] Frontend Junior → React Job
+- [x] Normalization aliases (ReactJS, Node.js, PostgreSQL)
+- [ ] Backend Senior → Java Job
+- [ ] DevOps → DevOps Job
+- [ ] Mobile → Mobile Job
+- [ ] Data Science → Data Science Job
+- [ ] AI Engineer → AI Engineer Job
+- [ ] Embedded → Embedded Job
+- [ ] QA → QA Job
+- [ ] Product Manager → Product Manager Job
+
 ## How to use
 1. Run parser -> normalized resumes and jobs.
 2. Run `GenerateAnalysis` for each pair.
 3. Compare `Analysis` to expected outcomes (overall, breakdown, gaps).
+4. When a scenario fails, inspect its rationale and update the implementation only if the domain contract truly changed.
 
 ## Maintenance
 - The golden dataset is immutable by default. To update, create an ADR documenting motivation and consequences.
