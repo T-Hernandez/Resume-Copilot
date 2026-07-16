@@ -1,0 +1,172 @@
+{
+  "01-domain/entities/analysis.ts": {
+    "mtime": 1783398173.1351,
+    "ast_hash": "97180f5c7439491ed2ed6cb1b5dd59df",
+    "semantic_hash": "97180f5c7439491ed2ed6cb1b5dd59df"
+  },
+  "01-domain/entities/education.ts": {
+    "mtime": 1783398173.132215,
+    "ast_hash": "9192e2e5e4eb8e0172f202fff7f38aa0",
+    "semantic_hash": "9192e2e5e4eb8e0172f202fff7f38aa0"
+  },
+  "01-domain/entities/experience.ts": {
+    "mtime": 1783398173.132215,
+    "ast_hash": "ac957316ce0bb85354adb019dbfb22b0",
+    "semantic_hash": "ac957316ce0bb85354adb019dbfb22b0"
+  },
+  "01-domain/entities/job.ts": {
+    "mtime": 1783398173.1292634,
+    "ast_hash": "43e06be9043c820d2e21310da618af2a",
+    "semantic_hash": "43e06be9043c820d2e21310da618af2a"
+  },
+  "01-domain/entities/match-result.ts": {
+    "mtime": 1783398173.132215,
+    "ast_hash": "454b255536bd43c8fcb442eb913e9974",
+    "semantic_hash": "454b255536bd43c8fcb442eb913e9974"
+  },
+  "01-domain/entities/pipeline-config.ts": {
+    "mtime": 1783398173.1357036,
+    "ast_hash": "b8d91dab6aca34b0dcfcfe8927759858",
+    "semantic_hash": "b8d91dab6aca34b0dcfcfe8927759858"
+  },
+  "01-domain/entities/resume.ts": {
+    "mtime": 1783398173.1281674,
+    "ast_hash": "af5593f1b38f97256974b65d0f11a87c",
+    "semantic_hash": "af5593f1b38f97256974b65d0f11a87c"
+  },
+  "01-domain/entities/skill.ts": {
+    "mtime": 1783398173.1292634,
+    "ast_hash": "d827a55c3c43d5cf5b3753c0f8c1c66a",
+    "semantic_hash": "d827a55c3c43d5cf5b3753c0f8c1c66a"
+  },
+  "01-domain/index.ts": {
+    "mtime": 1784165780.7255647,
+    "ast_hash": "75b919cdc2b0c616b23f050d6107c5fd",
+    "semantic_hash": "75b919cdc2b0c616b23f050d6107c5fd"
+  },
+  "01-domain/matching/compare-experience.ts": {
+    "mtime": 1784165780.7275608,
+    "ast_hash": "1942bf61e556341b6d5dd42bebbaeeae",
+    "semantic_hash": "1942bf61e556341b6d5dd42bebbaeeae"
+  },
+  "01-domain/matching/compare-skill.ts": {
+    "mtime": 1784165780.7275608,
+    "ast_hash": "36d2c3b1bae69ff9f73fa1117ecd65f4",
+    "semantic_hash": "36d2c3b1bae69ff9f73fa1117ecd65f4"
+  },
+  "01-domain/matching/match-resume-to-job.ts": {
+    "mtime": 1784165780.7275608,
+    "ast_hash": "97ffe081cb872b901918ad68d20c498f",
+    "semantic_hash": "97ffe081cb872b901918ad68d20c498f"
+  },
+  "01-domain/services/calculate-overall-score.ts": {
+    "mtime": 1783398173.1473129,
+    "ast_hash": "8367e6b6b7189fe3f8c724a88dba068c",
+    "semantic_hash": "8367e6b6b7189fe3f8c724a88dba068c"
+  },
+  "01-domain/services/calculate-subscore.ts": {
+    "mtime": 1783398173.1467364,
+    "ast_hash": "7117f34bc16ca8feed4a2092494e1e8a",
+    "semantic_hash": "7117f34bc16ca8feed4a2092494e1e8a"
+  },
+  "01-domain/services/compare-skill.ts": {
+    "mtime": 1783398173.1450057,
+    "ast_hash": "09a7da9999c8baa8c0a7cd691ca8e51d",
+    "semantic_hash": "09a7da9999c8baa8c0a7cd691ca8e51d"
+  },
+  "01-domain/services/extract-skills.ts": {
+    "mtime": 1783398173.1450057,
+    "ast_hash": "471793986fb339d8ce88c4f5cbd33b56",
+    "semantic_hash": "471793986fb339d8ce88c4f5cbd33b56"
+  },
+  "01-domain/services/generate-analysis.ts": {
+    "mtime": 1783398173.1473129,
+    "ast_hash": "6ec8089aadab4cf4eba518742c318f2a",
+    "semantic_hash": "6ec8089aadab4cf4eba518742c318f2a"
+  },
+  "01-domain/services/match-resume-to-job.ts": {
+    "mtime": 1783398173.1450057,
+    "ast_hash": "cafc00ac921d7cc3e737a7a412295581",
+    "semantic_hash": "cafc00ac921d7cc3e737a7a412295581"
+  },
+  "01-domain/services/normalize-resume.ts": {
+    "mtime": 1783398173.1431932,
+    "ast_hash": "9d21ce9df10c7ab56cd4696aebd991c1",
+    "semantic_hash": "9d21ce9df10c7ab56cd4696aebd991c1"
+  },
+  "01-domain/services/skill-normalizer.ts": {
+    "mtime": 1784164731.5985098,
+    "ast_hash": "e24c8c5bb27a255460185885bccfba23",
+    "semantic_hash": "e24c8c5bb27a255460185885bccfba23"
+  },
+  "01-domain/value-objects/confidence.ts": {
+    "mtime": 1783398173.1405098,
+    "ast_hash": "6db73db80c1d3252fb72780eeb26b788",
+    "semantic_hash": "6db73db80c1d3252fb72780eeb26b788"
+  },
+  "01-domain/value-objects/evidence.ts": {
+    "mtime": 1783398173.1405098,
+    "ast_hash": "9bb8092d021cd6a3e32cddac4a2aeed3",
+    "semantic_hash": "9bb8092d021cd6a3e32cddac4a2aeed3"
+  },
+  "01-domain/value-objects/keyword.ts": {
+    "mtime": 1783398173.1409528,
+    "ast_hash": "4fa877cefd8b675824864103fcf327b3",
+    "semantic_hash": "4fa877cefd8b675824864103fcf327b3"
+  },
+  "01-domain/value-objects/recommendation.ts": {
+    "mtime": 1783398173.1409528,
+    "ast_hash": "27ce86f24d7760e50d936fa13b2e0b4d",
+    "semantic_hash": "27ce86f24d7760e50d936fa13b2e0b4d"
+  },
+  "01-domain/value-objects/score.ts": {
+    "mtime": 1783398173.13931,
+    "ast_hash": "fbde8e8089a3a62da6ccd2ff45d6106c",
+    "semantic_hash": "fbde8e8089a3a62da6ccd2ff45d6106c"
+  },
+  "fixtures/analysis/frontend-junior-react-junior.json": {
+    "mtime": 1784165780.7275608,
+    "ast_hash": "2b051a201dbea9eb9bd38713c6d1bc12",
+    "semantic_hash": "2b051a201dbea9eb9bd38713c6d1bc12"
+  },
+  "package.json": {
+    "mtime": 1784164474.42393,
+    "ast_hash": "8d7722c3a7637d066f87d504586c556e",
+    "semantic_hash": "8d7722c3a7637d066f87d504586c556e"
+  },
+  "specifications/runner/executor.ts": {
+    "mtime": 1784165780.7255647,
+    "ast_hash": "41e92148c81d2c35acc850fa7fc0fbfd",
+    "semantic_hash": "41e92148c81d2c35acc850fa7fc0fbfd"
+  },
+  "specifications/runner/run-all.ts": {
+    "mtime": 1784165780.7265656,
+    "ast_hash": "b79c3b5bcf6b80376dfb2fca6e54bdb4",
+    "semantic_hash": "b79c3b5bcf6b80376dfb2fca6e54bdb4"
+  },
+  "specifications/runner/runner.ts": {
+    "mtime": 1784165780.7255647,
+    "ast_hash": "ef2d2e880ada361d2952549887cdba38",
+    "semantic_hash": "ef2d2e880ada361d2952549887cdba38"
+  },
+  "specifications/scenarios/frontend-junior.scenario.ts": {
+    "mtime": 1784165780.7255647,
+    "ast_hash": "8393a5c625044a695005ce386e3859f9",
+    "semantic_hash": "8393a5c625044a695005ce386e3859f9"
+  },
+  "specifications/scenarios/normalization-basic.scenario.ts": {
+    "mtime": 1784164731.5985098,
+    "ast_hash": "87d8367c53e49f5473e0f9c3c676823c",
+    "semantic_hash": "87d8367c53e49f5473e0f9c3c676823c"
+  },
+  "specifications/scenarios/pipeline-config.scenario.ts": {
+    "mtime": 1784165780.7275608,
+    "ast_hash": "494733cea4532d051b4a9087f3aba5b0",
+    "semantic_hash": "494733cea4532d051b4a9087f3aba5b0"
+  },
+  "tsconfig.json": {
+    "mtime": 1784164474.42393,
+    "ast_hash": "e0f5e4ae2388c6c63d518e08d8deab03",
+    "semantic_hash": "e0f5e4ae2388c6c63d518e08d8deab03"
+  }
+}

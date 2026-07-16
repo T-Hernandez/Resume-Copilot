@@ -1,0 +1,264 @@
+{
+  "communities": {
+    "0": [
+      "01_domain_entities_match_result",
+      "01_domain_entities_match_result_matchresult",
+      "01_domain_entities_match_result_matchtype",
+      "01_domain_index",
+      "01_domain_matching_compare_experience",
+      "01_domain_matching_compare_experience_compareexperience",
+      "01_domain_matching_compare_skill",
+      "01_domain_matching_compare_skill_compareskill",
+      "01_domain_matching_match_resume_to_job",
+      "01_domain_matching_match_resume_to_job_matchresumetojob",
+      "01_domain_services_calculate_subscore",
+      "01_domain_services_calculate_subscore_subscorecalculator",
+      "01_domain_services_calculate_subscore_subscorecalculator_calculate",
+      "01_domain_services_compare_skill",
+      "01_domain_services_compare_skill_skillcomparer",
+      "01_domain_services_compare_skill_skillcomparer_compare",
+      "01_domain_value_objects_keyword",
+      "01_domain_value_objects_keyword_keyword",
+      "01_domain_value_objects_recommendation",
+      "01_domain_value_objects_recommendation_recommendation"
+    ],
+    "1": [
+      "specifications_runner_executor",
+      "specifications_runner_executor_extractskillssimple",
+      "specifications_runner_executor_given",
+      "specifications_runner_executor_normalizeskills",
+      "specifications_runner_executor_parsejobsimple",
+      "specifications_runner_executor_parseresumesimple",
+      "specifications_runner_executor_readtext",
+      "specifications_runner_executor_runscenario",
+      "specifications_runner_run_all",
+      "specifications_runner_runner",
+      "specifications_runner_runner_evaluateexpectation",
+      "specifications_runner_runner_expect",
+      "specifications_runner_runner_given",
+      "specifications_runner_runner_runall",
+      "specifications_runner_runner_scenario",
+      "specifications_runner_runner_scenariodef",
+      "specifications_runner_runner_scenarios",
+      "specifications_scenarios_frontend_junior_scenario",
+      "specifications_scenarios_normalization_basic_scenario",
+      "specifications_scenarios_pipeline_config_scenario"
+    ],
+    "2": [
+      "01_domain_entities_education",
+      "01_domain_entities_education_education",
+      "01_domain_entities_experience",
+      "01_domain_entities_experience_experience",
+      "01_domain_entities_resume",
+      "01_domain_entities_resume_normalizedresume",
+      "01_domain_entities_resume_parsedresume",
+      "01_domain_entities_resume_resume",
+      "01_domain_entities_skill",
+      "01_domain_entities_skill_skilldictionaryentry",
+      "01_domain_services_extract_skills",
+      "01_domain_services_extract_skills_skillextractor",
+      "01_domain_services_extract_skills_skillextractor_extract",
+      "01_domain_services_normalize_resume",
+      "01_domain_services_normalize_resume_resumenormalizer",
+      "01_domain_services_normalize_resume_resumenormalizer_normalize"
+    ],
+    "3": [
+      "ref_01_domain_ts",
+      "ref_node",
+      "ref_specifications_ts",
+      "tsconfig",
+      "tsconfig_compileroptions",
+      "tsconfig_compileroptions_esmoduleinterop",
+      "tsconfig_compileroptions_module",
+      "tsconfig_compileroptions_moduleresolution",
+      "tsconfig_compileroptions_skiplibcheck",
+      "tsconfig_compileroptions_strict",
+      "tsconfig_compileroptions_target",
+      "tsconfig_compileroptions_types",
+      "tsconfig_include"
+    ],
+    "4": [
+      "01_domain_entities_analysis",
+      "01_domain_entities_analysis_analysis",
+      "01_domain_entities_analysis_breakdown",
+      "01_domain_entities_pipeline_config",
+      "01_domain_entities_pipeline_config_pipelineconfig",
+      "01_domain_services_calculate_overall_score",
+      "01_domain_services_calculate_overall_score_overallscorecalculator",
+      "01_domain_services_calculate_overall_score_overallscorecalculator_calculate",
+      "01_domain_services_generate_analysis",
+      "01_domain_services_generate_analysis_analysisgenerator",
+      "01_domain_services_generate_analysis_analysisgenerator_generate"
+    ],
+    "5": [
+      "01_domain_entities_skill_skillinstance",
+      "01_domain_services_skill_normalizer",
+      "01_domain_services_skill_normalizer_defaultskillnormalizer",
+      "01_domain_services_skill_normalizer_defaultskillnormalizer_canonicalize",
+      "01_domain_services_skill_normalizer_defaultskillnormalizer_normalizeskill",
+      "01_domain_services_skill_normalizer_defaultskillnormalizer_normalizeskills",
+      "01_domain_services_skill_normalizer_skillnormalizer",
+      "01_domain_services_skill_normalizer_skillnormalizer_normalizeskill",
+      "01_domain_services_skill_normalizer_skillnormalizer_normalizeskills"
+    ],
+    "6": [
+      "package",
+      "package_devdependencies",
+      "package_devdependencies_ts_node",
+      "package_devdependencies_typescript",
+      "package_scripts",
+      "package_scripts_specs",
+      "ts_node",
+      "typescript"
+    ],
+    "7": [
+      "01_domain_entities_job",
+      "01_domain_entities_job_job",
+      "01_domain_entities_job_parsedjob",
+      "01_domain_services_match_resume_to_job",
+      "01_domain_services_match_resume_to_job_matcherservice",
+      "01_domain_services_match_resume_to_job_matcherservice_match"
+    ],
+    "8": [
+      "01_domain_value_objects_confidence",
+      "01_domain_value_objects_confidence_confidence",
+      "01_domain_value_objects_confidence_createconfidence"
+    ],
+    "9": [
+      "01_domain_value_objects_evidence",
+      "01_domain_value_objects_evidence_evidence",
+      "01_domain_value_objects_evidence_evidenceitem"
+    ],
+    "10": [
+      "01_domain_value_objects_score",
+      "01_domain_value_objects_score_createscore",
+      "01_domain_value_objects_score_score"
+    ]
+  },
+  "cohesion": {
+    "0": 0.19473684210526315,
+    "1": 0.17894736842105263,
+    "2": 0.23333333333333334,
+    "3": 0.15384615384615385,
+    "4": 0.2909090909090909,
+    "5": 0.4166666666666667,
+    "6": 0.25,
+    "7": 0.5333333333333333,
+    "8": 0.6666666666666666,
+    "9": 0.6666666666666666,
+    "10": 0.6666666666666666
+  },
+  "gods": [
+    {
+      "id": "01_domain_entities_match_result_matchresult",
+      "label": "MatchResult",
+      "degree": 13
+    },
+    {
+      "id": "01_domain_entities_skill_skillinstance",
+      "label": "SkillInstance",
+      "degree": 12
+    },
+    {
+      "id": "01_domain_entities_resume_normalizedresume",
+      "label": "NormalizedResume",
+      "degree": 10
+    },
+    {
+      "id": "specifications_runner_executor_runscenario",
+      "label": "runScenario()",
+      "degree": 8
+    },
+    {
+      "id": "tsconfig_compileroptions",
+      "label": "compilerOptions",
+      "degree": 8
+    },
+    {
+      "id": "01_domain_entities_job_job",
+      "label": "Job",
+      "degree": 6
+    },
+    {
+      "id": "01_domain_entities_resume_resume",
+      "label": "Resume",
+      "degree": 6
+    },
+    {
+      "id": "01_domain_services_skill_normalizer_defaultskillnormalizer",
+      "label": "DefaultSkillNormalizer",
+      "degree": 6
+    },
+    {
+      "id": "01_domain_entities_pipeline_config_pipelineconfig",
+      "label": "PipelineConfig",
+      "degree": 5
+    },
+    {
+      "id": "01_domain_entities_analysis_analysis",
+      "label": "Analysis",
+      "degree": 4
+    }
+  ],
+  "surprises": [
+    {
+      "source": "Analysis",
+      "target": "MatchResult",
+      "source_files": [
+        "01-domain/entities/analysis.ts",
+        "01-domain/entities/match-result.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "why": "bridges separate communities"
+    },
+    {
+      "source": "Resume",
+      "target": "SkillInstance",
+      "source_files": [
+        "01-domain/entities/resume.ts",
+        "01-domain/entities/skill.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "why": "bridges separate communities"
+    },
+    {
+      "source": "Resume",
+      "target": "Education",
+      "source_files": [
+        "01-domain/entities/resume.ts",
+        "01-domain/entities/education.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "why": "cross-file semantic connection"
+    },
+    {
+      "source": "Resume",
+      "target": "Experience",
+      "source_files": [
+        "01-domain/entities/resume.ts",
+        "01-domain/entities/experience.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "why": "cross-file semantic connection"
+    },
+    {
+      "source": "matchResumeToJob()",
+      "target": "compareExperience()",
+      "source_files": [
+        "01-domain/matching/match-resume-to-job.ts",
+        "01-domain/matching/compare-experience.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "cross-file semantic connection"
+    }
+  ],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

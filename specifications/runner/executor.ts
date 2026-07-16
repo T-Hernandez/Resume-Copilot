@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { DefaultSkillNormalizer } from '../../01-domain/services/skill-normalizer';
+import { generateAnalysisV1 } from '../../01-domain/services/generate-analysis-v1';
 
 type Given = { resumePath?: string; jobPath?: string; resumeText?: string; jobText?: string; pipelineConfig?: any };
 
@@ -15,7 +16,6 @@ function readText(p?: string) {
 export async function runScenario(given: Given) {
   const resumeText = given.resumeText ?? readText(given.resumePath);
   const jobText = given.jobText ?? readText(given.jobPath);
-  if (!resumeText || !jobText) throw new Error('Missing resume or job text');
 
   // parse resume simple fields
   const resume = parseResumeSimple(resumeText);
@@ -45,25 +45,47 @@ export async function runScenario(given: Given) {
   }
   const overall = Math.round(weightedSum / totalWeight);
 
-  const analysis = {
-    overall,
-    breakdown,
-    matches: matched.map((s: string, i: number) => ({ id: `m_${i}`, type: 'skill', resumeRef: s, jobRef: s, score: 100, confidence: 90, reason: 'Exact match', evidence: ['Skills section'] })),
-    gaps: missing,
-    confidence: Math.round((resume.textQuality || 80)),
-    metadata: {
-      executor: 'spec-harness-v0',
+  const analysis = generateAnalysisV1(
+    {
+      id: 'resume-1',
+      name: 'Sample Resume',
+      skills: normalizeSkillsToInstances(extractSkillsSimple(resumeText)),
+      experience: resumeText ? [{ id: 'exp-1', role: 'Developer', company: 'Sample', startDate: '2021-01-01', endDate: '2024-01-01' }] : [],
+      raw: resumeText
+    },
+    {
+      id: 'job-1',
+      title: 'Sample Job',
+      rawText: jobText,
+      requiredSkills: job.requiredSkills || [],
+      minExperienceYears: job.minExperienceYears || 0
+    },
+    {
       algorithmVersion: given.pipelineConfig?.algorithmVersion || '0.0.0',
-      pipelineConfig: given.pipelineConfig || {},
-    }
-  } as any;
+      weights: given.pipelineConfig?.weights || { skills: 0.4, experience: 0.25, education: 0.1, keywords: 0.15, certifications: 0.05, languages: 0.05 },
+      thresholds: given.pipelineConfig?.thresholds || {},
+      partialMatchScore: given.pipelineConfig?.partialMatchScore || 70
+    } as any
+  );
 
-  return analysis;
+  return {
+    ...analysis,
+    metadata: {
+      ...analysis.metadata,
+      executor: 'spec-harness-v0',
+      pipelineConfig: given.pipelineConfig || analysis.metadata?.pipelineConfig || {}
+    }
+  };
 }
 
 function normalizeSkills(list: string[]) {
   const normalizer = new DefaultSkillNormalizer();
   return normalizer.normalizeSkills(list).map(s => s.canonical || s.raw);
+}
+
+function normalizeSkillsToInstances(list: string[]) {
+  const normalizer = new DefaultSkillNormalizer();
+  return normalizer.normalizeSkills(list);
 }
 
 function parseResumeSimple(text: string) {
