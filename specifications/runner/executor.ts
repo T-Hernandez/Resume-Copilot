@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { DefaultSkillNormalizer } from '../../01-domain/services/skill-normalizer';
 import { generateAnalysisV1 } from '../../01-domain/services/generate-analysis-v1';
+import { generateAnalysis } from '../../01-domain/services/generate-analysis';
 
 type Given = { resumePath?: string; jobPath?: string; resumeText?: string; jobText?: string; pipelineConfig?: any };
 
@@ -45,35 +46,25 @@ export async function runScenario(given: Given) {
   }
   const overall = Math.round(weightedSum / totalWeight);
 
-  const analysis = generateAnalysisV1(
-    {
-      id: 'resume-1',
-      name: 'Sample Resume',
-      skills: normalizeSkillsToInstances(extractSkillsSimple(resumeText)),
-      experience: resumeText ? [{ id: 'exp-1', role: 'Developer', company: 'Sample', startDate: '2021-01-01', endDate: '2024-01-01' }] : [],
-      raw: resumeText
-    },
-    {
-      id: 'job-1',
-      title: 'Sample Job',
-      rawText: jobText,
-      requiredSkills: job.requiredSkills || [],
-      minExperienceYears: job.minExperienceYears || 0
-    },
-    {
+  const pipeline = generateAnalysis({
+    resume: resumeText,
+    job: jobText,
+    pipelineConfig: {
       algorithmVersion: given.pipelineConfig?.algorithmVersion || '0.0.0',
       weights: given.pipelineConfig?.weights || { skills: 0.4, experience: 0.25, education: 0.1, keywords: 0.15, certifications: 0.05, languages: 0.05 },
       thresholds: given.pipelineConfig?.thresholds || {},
       partialMatchScore: given.pipelineConfig?.partialMatchScore || 70
     } as any
-  );
+  });
 
   return {
-    ...analysis,
+    ...pipeline.analysis,
+    parsedResume: pipeline.parsedResume,
+    parsedJob: pipeline.parsedJob,
     metadata: {
-      ...analysis.metadata,
+      ...pipeline.analysis.metadata,
       executor: 'spec-harness-v0',
-      pipelineConfig: given.pipelineConfig || analysis.metadata?.pipelineConfig || {}
+      pipelineConfig: given.pipelineConfig || pipeline.analysis.metadata?.pipelineConfig || {}
     }
   };
 }

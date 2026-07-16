@@ -18,6 +18,8 @@ export * from './services/extract-skills';
 export * from './services/compare-skill';
 export * from './services/skill-normalizer';
 export * from './services/generate-analysis-v1';
+export * from './services/generate-analysis';
+export * from './services/parse-resume';
 export * from './matching/compare-skill';
 export * from './matching/compare-experience';
 export * from './matching/match-resume-to-job';

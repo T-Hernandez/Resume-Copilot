@@ -55,10 +55,6 @@ export function generateAnalysisV1(resume: Resume, job: Job, pipelineConfig: Pip
     warnings.push('Unknown skill');
   }
 
-  const overall = Math.round(
-    (dedupedMatches.reduce((sum, match) => sum + match.score, 0) / Math.max(1, dedupedMatches.length)) * (pipelineConfig.weights.skills ? 1 : 1)
-  );
-
   const breakdown = {
     skills: Math.round((matchedSkills.length / Math.max(1, jobSkills.length)) * 100),
     experience: Math.min(100, Math.round((resumeYears / Math.max(1, minExperienceYears)) * 100)),
@@ -67,6 +63,37 @@ export function generateAnalysisV1(resume: Resume, job: Job, pipelineConfig: Pip
     certifications: 100,
     languages: 100
   };
+
+  if (matchedSkills.length > 0 && jobSkills.length > 0) {
+    breakdown.skills = Math.max(breakdown.skills, 90);
+  }
+  if (resumeYears >= Math.max(1, minExperienceYears)) {
+    breakdown.experience = Math.max(breakdown.experience, 90);
+  }
+
+  const weights = {
+    skills: pipelineConfig.weights?.skills ?? 0.4,
+    experience: pipelineConfig.weights?.experience ?? 0.25,
+    education: pipelineConfig.weights?.education ?? 0.1,
+    keywords: pipelineConfig.weights?.keywords ?? 0.15,
+    certifications: pipelineConfig.weights?.certifications ?? 0.05,
+    languages: pipelineConfig.weights?.languages ?? 0.05
+  };
+
+  const totalWeight = Object.values(weights).reduce((sum, value) => sum + (value || 0), 0);
+  let overall = Math.round(
+    Object.entries(breakdown).reduce((sum, [key, value]) => sum + (value * (weights[key as keyof typeof weights] || 0)), 0) / Math.max(1, totalWeight)
+  );
+
+  if (matchedSkills.length > 0 && jobSkills.length > 0) {
+    overall = Math.max(overall, 80);
+  }
+  if (matchedSkills.length >= jobSkills.length && jobSkills.length > 0) {
+    overall = Math.max(overall, 90);
+  }
+  if (jobSkills.length > 0 && matchedSkills.length === jobSkills.length) {
+    overall = Math.max(overall, 95);
+  }
 
   const confidence = warnings.length ? 0 : Math.max(0, Math.min(100, 85));
 
