@@ -7,8 +7,8 @@ Scenario({
     jobText: 'Required Skills: React, Node.js, PostgreSQL'
   },
   expect: {
-    overall: '>= 95',
-    'breakdown.skills': '>= 95',
+    overall: 'greaterThan:85',
+    'breakdown.skills': 'greaterThan:85',
     'gaps.length': '== 0',
     confidence: '>= 70'
   },

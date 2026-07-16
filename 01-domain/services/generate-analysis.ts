@@ -3,6 +3,7 @@ import { Job } from '../entities/job';
 import { PipelineConfig } from '../entities/pipeline-config';
 import { Resume } from '../entities/resume';
 import { generateAnalysisV1 } from './generate-analysis-v1';
+import { parseSections } from './section-parser';
 
 export interface AnalysisGenerator {
   generate(resume: Resume, job: Job, pipelineConfig: PipelineConfig): Promise<Analysis> | Analysis;
@@ -33,9 +34,10 @@ export function generateAnalysis(input: GenerateAnalysisInput): GenerateAnalysis
 }
 
 function parseResumeText(text: string): Resume {
+  const sections = parseSections(text);
   const skillsLine = text.split(/\r?\n/).find(line => line.toLowerCase().startsWith('skills:')) || '';
   const skills = skillsLine.split(':')[1]?.split(/[,;]+/).map(skill => skill.trim()).filter(Boolean) || [];
-  const experience = text.includes('experience') ? [{ id: 'exp-1', role: 'Developer', company: 'Sample', startDate: '2021-01-01', endDate: '2024-01-01' }] : [];
+  const experience = sections.byTitle['experience'] ? [{ id: 'exp-1', role: 'Developer', company: 'Sample', startDate: '2021-01-01', endDate: '2024-01-01' }] : [];
 
   return {
     id: 'resume-1',

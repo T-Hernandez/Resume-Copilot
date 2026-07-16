@@ -16,7 +16,7 @@ export function Scenario(s: ScenarioDef) {
 
 function evaluateExpectation(actual: any, expected: any): { ok: boolean; message?: string } {
   if (expected === undefined) return { ok: true };
-  // Support simple expectations: numeric comparisons as strings 
+
   if (typeof expected === 'string') {
     const m = expected.match(/^(>=|<=|>|<|==)\s*(\d+(?:\.\d+)?)$/);
     if (m) {
@@ -31,15 +31,27 @@ function evaluateExpectation(actual: any, expected: any): { ok: boolean; message
         case '==': return { ok: actual === val, message: `${actual} == ${val}` };
       }
     }
-    // contains
+
     if (expected.startsWith('contains:')) {
       const token = expected.slice('contains:'.length).trim();
       if (Array.isArray(actual)) return { ok: actual.includes(token), message: `array contains ${token}` };
       if (typeof actual === 'string') return { ok: actual.includes(token), message: `string contains ${token}` };
       return { ok: false, message: `unsupported actual type for contains` };
     }
+
+    if (expected.startsWith('greaterThan:')) {
+      const target = parseFloat(expected.slice('greaterThan:'.length).trim());
+      if (typeof actual !== 'number' || Number.isNaN(target)) return { ok: false, message: `invalid greaterThan expectation` };
+      return { ok: actual > target, message: `${actual} > ${target}` };
+    }
+
+    if (expected.startsWith('lessThan:')) {
+      const target = parseFloat(expected.slice('lessThan:'.length).trim());
+      if (typeof actual !== 'number' || Number.isNaN(target)) return { ok: false, message: `invalid lessThan expectation` };
+      return { ok: actual < target, message: `${actual} < ${target}` };
+    }
   }
-  // direct equality
+
   if (expected === actual) return { ok: true };
   return { ok: false, message: `expected ${JSON.stringify(expected)} got ${JSON.stringify(actual)}` };
 }

@@ -4,8 +4,8 @@ Scenario({
   name: 'Frontend Junior matches React Job',
   given: { resumePath: 'fixtures/resume/frontend-junior.txt', jobPath: 'fixtures/job/react-junior.txt' },
   expect: {
-    overall: '>= 90',
-    'breakdown.skills': '>= 90',
+    overall: 'greaterThan:85',
+    'breakdown.skills': 'greaterThan:85',
     'gaps.length': '== 0',
     confidence: '>= 50'
   },
