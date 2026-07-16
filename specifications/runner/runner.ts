@@ -15,6 +15,7 @@ export function Scenario(s: ScenarioDef) {
 }
 
 function evaluateExpectation(actual: any, expected: any): { ok: boolean; message?: string } {
+  if (expected === undefined) return { ok: true };
   // Support simple expectations: numeric comparisons as strings 
   if (typeof expected === 'string') {
     const m = expected.match(/^(>=|<=|>|<|==)\s*(\d+(?:\.\d+)?)$/);
@@ -47,7 +48,11 @@ import { runScenario } from './executor';
 
 export async function runAll() {
   console.log(`Running ${scenarios.length} scenarios...`);
+  const startedAt = Date.now();
   let failed = 0;
+  let passed = 0;
+  let totalScore = 0;
+  let totalConfidence = 0;
   for (const s of scenarios) {
     process.stdout.write(`- ${s.name} ... `);
     try {
@@ -71,6 +76,9 @@ export async function runAll() {
         }
       }
       if (okAll) {
+        passed++;
+        totalScore += typeof analysis?.overall === 'number' ? analysis.overall : 0;
+        totalConfidence += typeof analysis?.confidence === 'number' ? analysis.confidence : 0;
         if (s.rationale?.length) {
           console.log(`OK (${s.rationale.join(' | ')})`);
         } else {
@@ -84,6 +92,12 @@ export async function runAll() {
       console.error(err);
     }
   }
+  const durationMs = Date.now() - startedAt;
+  const avgScore = scenarios.length === 0 ? 0 : Math.round(totalScore / Math.max(1, passed));
+  const avgConfidence = scenarios.length === 0 ? 0 : Math.round(totalConfidence / Math.max(1, passed));
   console.log(`\nDone. ${failed} failed / ${scenarios.length} total.`);
+  console.log(`Average score: ${avgScore}`);
+  console.log(`Average confidence: ${avgConfidence}`);
+  console.log(`Execution time: ${durationMs} ms`);
   if (failed > 0) process.exit(2);
 }

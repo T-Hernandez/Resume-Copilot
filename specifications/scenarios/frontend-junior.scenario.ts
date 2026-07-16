@@ -2,7 +2,7 @@ import { Scenario } from '../runner/runner';
 
 Scenario({
   name: 'Frontend Junior matches React Job',
-  given: { resumePath: 'examples/resume-frontend-junior.txt', jobPath: 'examples/job-react.txt' },
+  given: { resumePath: 'fixtures/resume/frontend-junior.txt', jobPath: 'fixtures/job/react-junior.txt' },
   expect: {
     overall: '>= 90',
     'breakdown.skills': '>= 90',

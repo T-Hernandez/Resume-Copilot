@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { DefaultSkillNormalizer } from '../../01-domain/services/skill-normalizer';
 
-type Given = { resumePath?: string; jobPath?: string; resumeText?: string; jobText?: string };
+type Given = { resumePath?: string; jobPath?: string; resumeText?: string; jobText?: string; pipelineConfig?: any };
 
 function readText(p?: string) {
   if (!p) return '';
@@ -51,7 +51,11 @@ export async function runScenario(given: Given) {
     matches: matched.map((s: string, i: number) => ({ id: `m_${i}`, type: 'skill', resumeRef: s, jobRef: s, score: 100, confidence: 90, reason: 'Exact match', evidence: ['Skills section'] })),
     gaps: missing,
     confidence: Math.round((resume.textQuality || 80)),
-    metadata: { executor: 'spec-harness-v0' }
+    metadata: {
+      executor: 'spec-harness-v0',
+      algorithmVersion: given.pipelineConfig?.algorithmVersion || '0.0.0',
+      pipelineConfig: given.pipelineConfig || {},
+    }
   } as any;
 
   return analysis;

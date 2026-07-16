@@ -1,0 +1,10 @@
+Name: Ana Pérez
+Title: Frontend Developer
+Summary: Desarrolladora frontend con experiencia en React y TypeScript. Construí SPAs y componentes reutilizables.
+Skills: React, TypeScript, JavaScript, HTML, CSS, Jest
+Experience:
+- Acme Corp — Frontend Developer (2021-2024)
+  - Migré la UI a React + TypeScript
+  - Implementé tests con Jest
+Projects:
+- Producto A: SPA en React que consume APIs REST
