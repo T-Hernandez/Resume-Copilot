@@ -3,7 +3,7 @@ import { Job } from '../entities/job';
 import { PipelineConfig } from '../entities/pipeline-config';
 import { Resume } from '../entities/resume';
 import { generateAnalysisV1 } from './generate-analysis-v1';
-import { parseSections } from './section-parser';
+import { buildDocumentPipeline } from './document-processing-pipeline';
 
 export interface AnalysisGenerator {
   generate(resume: Resume, job: Job, pipelineConfig: PipelineConfig): Promise<Analysis> | Analysis;
@@ -34,14 +34,13 @@ export function generateAnalysis(input: GenerateAnalysisInput): GenerateAnalysis
 }
 
 function parseResumeText(text: string): Resume {
-  const sections = parseSections(text);
-  const skillsLine = text.split(/\r?\n/).find(line => line.toLowerCase().startsWith('skills:')) || '';
-  const skills = skillsLine.split(':')[1]?.split(/[,;]+/).map(skill => skill.trim()).filter(Boolean) || [];
-  const experience = sections.byTitle['experience'] ? [{ id: 'exp-1', role: 'Developer', company: 'Sample', startDate: '2021-01-01', endDate: '2024-01-01' }] : [];
+  const pipeline = buildDocumentPipeline(text);
+  const skills = pipeline.structuredResume.skills;
+  const experience = pipeline.structuredResume.experience.length ? [{ id: 'exp-1', role: pipeline.structuredResume.experience[0].role || 'Developer', company: pipeline.structuredResume.experience[0].company || 'Sample', startDate: '2021-01-01', endDate: '2024-01-01' }] : [];
 
   return {
     id: 'resume-1',
-    skills: skills.map((skill, index) => ({ id: `skill-${index + 1}`, raw: skill, confidence: 100 })),
+    skills: skills.map((skill, index) => ({ id: `skill-${index + 1}`, raw: skill.raw, confidence: skill.confidence || 100 })),
     experience,
     raw: text
   };

@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { DefaultSkillNormalizer } from '../../01-domain/services/skill-normalizer';
-import { generateAnalysisV1 } from '../../01-domain/services/generate-analysis-v1';
 import { generateAnalysis } from '../../01-domain/services/generate-analysis';
+import { buildDocumentPipeline } from '../../01-domain/services/document-processing-pipeline';
 
 type Given = { resumePath?: string; jobPath?: string; resumeText?: string; jobText?: string; pipelineConfig?: any };
 
@@ -18,21 +18,17 @@ export async function runScenario(given: Given) {
   const resumeText = given.resumeText ?? readText(given.resumePath);
   const jobText = given.jobText ?? readText(given.jobPath);
 
-  // parse resume simple fields
+  const documentPipeline = buildDocumentPipeline(resumeText);
+  const parsedDocument = documentPipeline.parsedDocument;
   const resume = parseResumeSimple(resumeText);
   const job = parseJobSimple(jobText);
 
-  // normalization: extract skills and canonicalize
   const normalizer = new DefaultSkillNormalizer();
-  const resumeSkills = normalizer.normalizeSkills(extractSkillsSimple(resumeText)).map(s => s.canonical || s.raw);
+  const resumeSkills = normalizer.normalizeSkills(documentPipeline.structuredResume.skills.map(skill => skill.raw)).map(s => s.canonical || s.raw);
   const jobReq = normalizer.normalizeSkills(job.requiredSkills || []).map(s => s.canonical || s.raw);
 
-  // matching: count overlaps
   const matched = jobReq.filter(s => resumeSkills.includes(s));
-  const missing = jobReq.filter(s => !resumeSkills.includes(s));
-
   const skillsScore = jobReq.length === 0 ? 0 : Math.round((matched.length / jobReq.length) * 100);
-  // experience: naive years matching
   const expScore = Math.min(100, Math.round((resume.years || 0) / (job.minExperienceYears || 1) * 100));
 
   const breakdown: Record<string, number> = { skills: skillsScore, experience: expScore, education: 100, keywords: 100, certifications: 100, languages: 100 };
@@ -61,6 +57,7 @@ export async function runScenario(given: Given) {
     ...pipeline.analysis,
     parsedResume: pipeline.parsedResume,
     parsedJob: pipeline.parsedJob,
+    parsedDocument,
     metadata: {
       ...pipeline.analysis.metadata,
       executor: 'spec-harness-v0',
