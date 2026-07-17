@@ -5,6 +5,7 @@ import './../scenarios/vertical-slice.scenario';
 import './../scenarios/edge-cases.scenario';
 import './../scenarios/public-api.scenario';
 import './../scenarios/document-processing.scenario';
+import './../scenarios/section-header-variants.scenario';
 import { runAll } from './runner';
 
 runAll().catch(err => {

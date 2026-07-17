@@ -22,8 +22,21 @@ export interface GenerateAnalysisPipeline {
 }
 
 export function generateAnalysis(input: GenerateAnalysisInput): GenerateAnalysisPipeline {
-  const resumeInput = typeof input.resume === 'string' ? parseResumeText(input.resume) : input.resume;
-  const jobInput = typeof input.job === 'string' ? parseJobText(input.job) : input.job;
+  const resumeInput = typeof input.resume === 'string' ? parseResumeText(input.resume) : {
+    ...input.resume,
+    skills: (input.resume.skills || []).map((skill, index) => ({
+      id: `skill-${index + 1}`,
+      raw: typeof skill === 'string' ? skill : skill.raw,
+      canonical: typeof skill === 'string' ? undefined : skill.canonical,
+      confidence: typeof skill === 'string' ? 100 : skill.confidence ?? 100
+    }))
+  };
+
+  const jobInput = typeof input.job === 'string' ? parseJobText(input.job) : {
+    ...input.job,
+    requiredSkills: input.job.requiredSkills || []
+  };
+
   const analysis = generateAnalysisV1(resumeInput, jobInput, input.pipelineConfig);
 
   return {

@@ -3,6 +3,7 @@ import * as path from 'path';
 import { DefaultSkillNormalizer } from '../../01-domain/services/skill-normalizer';
 import { generateAnalysis } from '../../01-domain/services/generate-analysis';
 import { buildDocumentPipeline } from '../../01-domain/services/document-processing-pipeline';
+import { parseResumeSections } from '../../01-domain/services/parse-resume-sections';
 
 type Given = { resumePath?: string; jobPath?: string; resumeText?: string; jobText?: string; pipelineConfig?: any };
 
@@ -20,6 +21,7 @@ export async function runScenario(given: Given) {
 
   const documentPipeline = buildDocumentPipeline(resumeText);
   const parsedDocument = documentPipeline.parsedDocument;
+  const resumeSections = parseResumeSections(resumeText);
   const resume = parseResumeSimple(resumeText);
   const job = parseJobSimple(jobText);
 
@@ -58,6 +60,7 @@ export async function runScenario(given: Given) {
     parsedResume: pipeline.parsedResume,
     parsedJob: pipeline.parsedJob,
     parsedDocument,
+    resumeSections,
     metadata: {
       ...pipeline.analysis.metadata,
       executor: 'spec-harness-v0',

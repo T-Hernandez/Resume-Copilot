@@ -1,3 +1,5 @@
+import { matchCanonicalSection } from './section-headers';
+
 export interface ParsedSection {
   title: string;
   content: string[];
@@ -27,15 +29,6 @@ export interface DocumentPipelineResult {
 export function buildDocumentPipeline(text: string): DocumentPipelineResult {
   const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
   const sections: ParsedSection[] = [];
-  const sectionNames = ['skills', 'experience', 'education', 'projects', 'languages', 'certifications'];
-  const aliases: Record<string, string[]> = {
-    skills: ['skills', 'technical competencies', 'technical skills', 'tech stack', 'core skills', 'competencies'],
-    experience: ['experience', 'work experience', 'professional experience'],
-    education: ['education', 'academics'],
-    projects: ['projects', 'portfolio'],
-    languages: ['languages'],
-    certifications: ['certifications', 'licenses']
-  };
 
   let currentTitle = 'overview';
   let currentContent: string[] = [];
@@ -46,15 +39,9 @@ export function buildDocumentPipeline(text: string): DocumentPipelineResult {
     sections.push({ title: currentTitle, content: currentContent, startLine: currentStart, endLine: currentStart + currentContent.length });
   };
 
-  const detectSection = (line: string) => {
-    const normalized = line.toLowerCase();
-    for (const [canonical, values] of Object.entries(aliases)) {
-      if (values.some(value => normalized === value || normalized.startsWith(`${value}:`))) {
-        return canonical;
-      }
-    }
-    return undefined;
-  };
+  // Header recognition lives in section-headers.ts so new header variants
+  // (e.g. "Core Competencies", "Stack") are a config change, not a code change.
+  const detectSection = (line: string) => matchCanonicalSection(line);
 
   lines.forEach((line, index) => {
     const detected = detectSection(line);
@@ -82,7 +69,10 @@ export function buildDocumentPipeline(text: string): DocumentPipelineResult {
     .flatMap(section => section.content)
     .flatMap(line => line.split(/[,;]+/))
     .map(token => token.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .filter(token => !token.toLowerCase().startsWith('summary:'))
+    .filter(token => !token.toLowerCase().startsWith('title:'))
+    .filter(token => !token.toLowerCase().startsWith('name:'));
 
   const experienceCandidates = sections
     .filter(section => section.title === 'experience')
