@@ -12,6 +12,8 @@ import './../scenarios/parse-job-document.scenario';
 import './../scenarios/match-skill-evidence.scenario';
 import './../scenarios/score-engine.scenario';
 import './../scenarios/match-experience.scenario';
+import './../scenarios/match-education.scenario';
+import './../scenarios/generate-analysis-v2.scenario';
 import { runAll } from './runner';
 
 runAll().catch(err => {

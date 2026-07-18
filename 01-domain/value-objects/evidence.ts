@@ -4,11 +4,13 @@
 export type EvidenceSource =
   | 'resume.skills'
   | 'resume.experience'
+  | 'resume.education'
   | 'resume.projects'
   | 'resume.summary';
 
 export interface EvidenceLocation {
   experienceIndex?: number;
+  educationIndex?: number;
   projectIndex?: number;
 }
 

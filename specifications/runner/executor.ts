@@ -8,8 +8,11 @@ import { parseResumeDocument } from '../../01-domain/services/parse-resume-docum
 import { parseJobDocument } from '../../01-domain/services/parse-job-document';
 import { matchSkills } from '../../01-domain/matching/match-skill';
 import { matchExperience } from '../../01-domain/matching/match-experience';
+import { matchEducation } from '../../01-domain/matching/match-education';
+import { detectDegreeLevel } from '../../01-domain/matching/degree-level';
 import { calculateSubscore } from '../../01-domain/services/calculate-subscore';
 import { calculateOverallScore } from '../../01-domain/services/calculate-overall-score';
+import { generateAnalysisV2 } from '../../01-domain/services/generate-analysis-v2';
 import { PipelineConfig } from '../../01-domain/entities/pipeline-config';
 
 type Given = { resumePath?: string; jobPath?: string; resumeText?: string; jobText?: string; pipelineConfig?: any };
@@ -49,24 +52,44 @@ export async function runScenario(given: Given) {
   const experienceMatch = parsedJobDocument.minExperienceYears !== undefined
     ? matchExperience({ minYears: parsedJobDocument.minExperienceYears }, parsedResumeDocument)
     : undefined;
+  // EducationMatch, third Match<T> producer, exact same shape again. The
+  // job's educationLevel is still raw text (no structured Job-side parser
+  // for it yet) - detectDegreeLevel() is the one place that turns "Bachelor's
+  // degree required" into a comparable DegreeLevel, same job
+  // detectDegreeLevel already does for a resume's own degree text.
+  const requiredDegreeLevel = detectDegreeLevel(parsedJobDocument.educationLevel);
+  const educationMatch = requiredDegreeLevel !== undefined
+    ? matchEducation({ minLevel: requiredDegreeLevel }, parsedResumeDocument)
+    : undefined;
 
   // Score Engine: consumes Match<T>[] only, never resume/job text directly.
-  // education/keywords/etc. still don't have a Match<T> implementation, so
-  // they're left out of the breakdown entirely rather than faked with a
-  // placeholder subscore - calculateOverallScore already skips categories
-  // missing from the breakdown (proven in score-engine.scenario.ts).
-  // Still not wired into the `overall` used by the live analysis below
-  // (pipeline.analysis) - exposed separately as scoreEngine* so specs can
-  // verify it on its own before it replaces anything.
+  // keywords/etc. still don't have a Match<T> implementation, so they're
+  // left out of the breakdown entirely rather than faked with a placeholder
+  // subscore - calculateOverallScore already skips categories missing from
+  // the breakdown (proven in score-engine.scenario.ts). Still not wired
+  // into the `overall` used by the live V1 analysis below (pipeline.analysis)
+  // - exposed separately as scoreEngine* so specs can verify it on its own.
   const scoreEnginePipelineConfig: PipelineConfig = {
     algorithmVersion: given.pipelineConfig?.algorithmVersion || '0.0.0',
     weights: given.pipelineConfig?.weights || { skills: 0.4, experience: 0.25, education: 0.1, keywords: 0.15 }
   };
   const scoreEngineBreakdown: Record<string, number> = {
     skills: calculateSubscore(skillMatches),
-    ...(experienceMatch ? { experience: calculateSubscore([experienceMatch]) } : {})
+    ...(experienceMatch ? { experience: calculateSubscore([experienceMatch]) } : {}),
+    ...(educationMatch ? { education: calculateSubscore([educationMatch]) } : {})
   };
   const scoreEngineOverall = calculateOverallScore(scoreEngineBreakdown, scoreEnginePipelineConfig);
+
+  // generateAnalysisV2: the full Parser -> Evidence -> Match<T> -> Score
+  // Engine pipeline, producing an Analysis-shaped result the same way V1
+  // does (pipeline.analysis below), so scenarios can diff analysisV2.analysis
+  // against the legacy .overall/.breakdown/.confidence side by side on the
+  // exact same input. V1 is untouched - this is purely additive.
+  const analysisV2 = generateAnalysisV2({
+    resumeText,
+    jobText,
+    pipelineConfig: scoreEnginePipelineConfig
+  });
 
   const resume = parseResumeSimple(resumeText);
   const job = parseJobSimple(jobText);
@@ -111,8 +134,15 @@ export async function runScenario(given: Given) {
     parsedJobDocument,
     skillMatches,
     experienceMatch,
+    educationMatch,
     scoreEngineBreakdown,
     scoreEngineOverall,
+    analysisV2: analysisV2.analysis,
+    // Exposed only so specs can prove analysisV2.breakdown contains exactly
+    // the categories a Match<T> producer actually covered - no more, no
+    // less - without needing an "expected undefined" check the runner
+    // can't express (evaluateExpectation treats `undefined` as "skip").
+    analysisV2BreakdownKeyCount: Object.keys(analysisV2.analysis.breakdown).length,
     metadata: {
       ...pipeline.analysis.metadata,
       executor: 'spec-harness-v0',

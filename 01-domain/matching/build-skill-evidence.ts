@@ -1,24 +1,7 @@
 import { Evidence } from '../value-objects/evidence';
 import { ParsedResumeDocument } from '../services/parse-resume-document';
 import { DefaultSkillNormalizer } from '../services/skill-normalizer';
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-// `\bC++\b` never matches, anywhere, because `\b` needs a word-char/non-word
-// -char transition on BOTH sides, and "+" is a non-word char - so the
-// trailing boundary only fires if a word character comes right after ("C++x"),
-// never after whitespace or punctuation ("C++ and..."). Same problem for
-// "C#", "F#", and anything else ending in a symbol. Lookaround fixes it by
-// only checking that the characters immediately outside the match aren't
-// alphanumeric, regardless of what the match itself starts/ends with - so
-// "Node.js", "ASP.NET", "C++", "C#" all get correct boundaries.
-function mentionsSkill(text: string | undefined, skillQuery: string): boolean {
-  if (!text) return false;
-  const pattern = new RegExp(`(?<![A-Za-z0-9])${escapeRegExp(skillQuery)}(?![A-Za-z0-9])`, 'i');
-  return pattern.test(text);
-}
+import { textMentions as mentionsSkill } from './text-mentions';
 
 function collectSkillEvidenceFromSkills(
   skillQuery: string,
