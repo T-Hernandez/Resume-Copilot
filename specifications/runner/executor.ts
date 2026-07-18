@@ -7,6 +7,9 @@ import { parseResumeSections } from '../../01-domain/services/parse-resume-secti
 import { parseResumeDocument } from '../../01-domain/services/parse-resume-document';
 import { parseJobDocument } from '../../01-domain/services/parse-job-document';
 import { matchSkills } from '../../01-domain/matching/match-skill';
+import { calculateSubscore } from '../../01-domain/services/calculate-subscore';
+import { calculateOverallScore } from '../../01-domain/services/calculate-overall-score';
+import { PipelineConfig } from '../../01-domain/entities/pipeline-config';
 
 type Given = { resumePath?: string; jobPath?: string; resumeText?: string; jobText?: string; pipelineConfig?: any };
 
@@ -35,9 +38,25 @@ export async function runScenario(given: Given) {
   const parsedJobDocument = parseJobDocument(jobText);
   // Evidence-based matching: separate from the score-mixing matchResumeToJob
   // path below on purpose (see ADR discussion in memory) - matchSkill()
-  // never produces points, only matched/confidence/evidence/reasons. Not
-  // wired into scoring yet; that's the Score Engine's job, still to come.
+  // never produces points, only matched/confidence/evidence.
   const skillMatches = matchSkills(parsedJobDocument.requiredSkills, parsedResumeDocument);
+
+  // Score Engine: consumes Match<T>[] only, never resume/job text directly.
+  // `skills` is the only real category today - experience/education/etc.
+  // don't have a Match<T> implementation yet, so they're left out of the
+  // breakdown entirely rather than faked with a placeholder subscore.
+  // Still not wired into the `overall` used by the live analysis below
+  // (pipeline.analysis) - exposed separately as scoreEngine* so specs can
+  // verify it on its own before it replaces anything.
+  const scoreEnginePipelineConfig: PipelineConfig = {
+    algorithmVersion: given.pipelineConfig?.algorithmVersion || '0.0.0',
+    weights: given.pipelineConfig?.weights || { skills: 0.4, experience: 0.25, education: 0.1, keywords: 0.15 }
+  };
+  const scoreEngineBreakdown: Record<string, number> = {
+    skills: calculateSubscore(skillMatches)
+  };
+  const scoreEngineOverall = calculateOverallScore(scoreEngineBreakdown, scoreEnginePipelineConfig);
+
   const resume = parseResumeSimple(resumeText);
   const job = parseJobSimple(jobText);
 
@@ -80,6 +99,8 @@ export async function runScenario(given: Given) {
     parsedResumeDocument,
     parsedJobDocument,
     skillMatches,
+    scoreEngineBreakdown,
+    scoreEngineOverall,
     metadata: {
       ...pipeline.analysis.metadata,
       executor: 'spec-harness-v0',
