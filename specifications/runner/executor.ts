@@ -5,6 +5,7 @@ import { generateAnalysis } from '../../01-domain/services/generate-analysis';
 import { buildDocumentPipeline } from '../../01-domain/services/document-processing-pipeline';
 import { parseResumeSections } from '../../01-domain/services/parse-resume-sections';
 import { parseResumeDocument } from '../../01-domain/services/parse-resume-document';
+import { parseJobDocument } from '../../01-domain/services/parse-job-document';
 
 type Given = { resumePath?: string; jobPath?: string; resumeText?: string; jobText?: string; pipelineConfig?: any };
 
@@ -30,6 +31,7 @@ export async function runScenario(given: Given) {
   // placeholder that real multi-entry parsing would perturb).
   const resumeSections = parseResumeSections(resumeText);
   const parsedResumeDocument = parseResumeDocument(resumeText);
+  const parsedJobDocument = parseJobDocument(jobText);
   const resume = parseResumeSimple(resumeText);
   const job = parseJobSimple(jobText);
 
@@ -70,6 +72,7 @@ export async function runScenario(given: Given) {
     parsedDocument,
     resumeSections,
     parsedResumeDocument,
+    parsedJobDocument,
     metadata: {
       ...pipeline.analysis.metadata,
       executor: 'spec-harness-v0',

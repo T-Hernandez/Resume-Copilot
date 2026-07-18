@@ -8,6 +8,7 @@ import './../scenarios/document-processing.scenario';
 import './../scenarios/section-header-variants.scenario';
 import './../scenarios/parse-experience-education.scenario';
 import './../scenarios/parse-skills.scenario';
+import './../scenarios/parse-job-document.scenario';
 import { runAll } from './runner';
 
 runAll().catch(err => {
