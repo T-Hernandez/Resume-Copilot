@@ -34,9 +34,31 @@ export function parseResumeSections(text: string): ResumeSections {
 
   const currentOther = () => otherSections[otherSections.length - 1];
 
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-    if (!line) continue;
+  // Push a blank-line marker into a content bucket, but never two in a row
+  // and never before any real content - this is what lets a later parser
+  // (e.g. parseExperienceSection) split a section back into separate
+  // entries by blank line, instead of everything melting into one blob.
+  const pushBlankMarker = () => {
+    if (cursor === 'header') return;
+    if (cursor === 'other') {
+      const other = currentOther();
+      if (other && other.content.length && other.content[other.content.length - 1] !== '') {
+        other.content.push('');
+      }
+      return;
+    }
+    const bucket = buckets[cursor];
+    if (bucket && bucket.length && bucket[bucket.length - 1] !== '') {
+      bucket.push('');
+    }
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) {
+      pushBlankMarker();
+      continue;
+    }
 
     const canonical = matchCanonicalSection(line);
     if (canonical) {
@@ -47,7 +69,24 @@ export function parseResumeSections(text: string): ResumeSections {
       continue;
     }
 
-    if (looksLikeSectionHeader(line)) {
+    // Experience and education are expected to contain several blank-line
+    // -separated entries (one per job/degree). A short capitalized line
+    // right after a blank line is the NORMAL shape of the next entry's
+    // company/institution name there ("Google", "State University") - not
+    // a signal of a new top-level section. The unknown-header heuristic is
+    // only meaningful for sections that aren't expected to repeat like that.
+    const insideMultiEntrySection = cursor === 'experience' || cursor === 'education';
+    // Skills commonly group into sub-categories ("Frontend:", "Backend:") -
+    // parseSkillsSection reads those itself. A colon is what distinguishes
+    // "sub-category of the list I'm already in" from a genuine new section
+    // like "Volunteer Work" (no colon) showing up after the skills list.
+    const isSkillsCategoryLabel = cursor === 'skills' && line.includes(':');
+    const blankLineBefore = i === 0 || !lines[i - 1].trim();
+    if (
+      !insideMultiEntrySection &&
+      !isSkillsCategoryLabel &&
+      looksLikeSectionHeader(line, { inHeaderBlock: cursor === 'header', blankLineBefore })
+    ) {
       cursor = 'other';
       sawAnySection = true;
       const inline = inlineContentAfterHeader(line);
@@ -74,7 +113,9 @@ export function parseResumeSections(text: string): ResumeSections {
   const result: ResumeSections = { header: headerLines.join('\n') };
   for (const section of Object.keys(buckets) as CanonicalSection[]) {
     const content = buckets[section];
-    if (content && content.length) result[section] = content.join('\n');
+    if (!content || !content.length) continue;
+    while (content.length && content[content.length - 1] === '') content.pop();
+    if (content.length) result[section] = content.join('\n');
   }
   if (otherSections.length) {
     result.other = otherSections

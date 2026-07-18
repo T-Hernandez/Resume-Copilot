@@ -4,6 +4,7 @@ import { DefaultSkillNormalizer } from '../../01-domain/services/skill-normalize
 import { generateAnalysis } from '../../01-domain/services/generate-analysis';
 import { buildDocumentPipeline } from '../../01-domain/services/document-processing-pipeline';
 import { parseResumeSections } from '../../01-domain/services/parse-resume-sections';
+import { parseResumeDocument } from '../../01-domain/services/parse-resume-document';
 
 type Given = { resumePath?: string; jobPath?: string; resumeText?: string; jobText?: string; pipelineConfig?: any };
 
@@ -21,7 +22,14 @@ export async function runScenario(given: Given) {
 
   const documentPipeline = buildDocumentPipeline(resumeText);
   const parsedDocument = documentPipeline.parsedDocument;
+  // Phase 1 (raw sections) is kept separate from Phase 2 (parseResumeDocument,
+  // the structured orchestrator) because specs test each layer independently
+  // - header/section-boundary detection here, company/title/date extraction
+  // there. Neither is yet wired into the scoring path below (see ADR
+  // discussion: resumeYears in scoring is currently experience.length, a
+  // placeholder that real multi-entry parsing would perturb).
   const resumeSections = parseResumeSections(resumeText);
+  const parsedResumeDocument = parseResumeDocument(resumeText);
   const resume = parseResumeSimple(resumeText);
   const job = parseJobSimple(jobText);
 
@@ -61,6 +69,7 @@ export async function runScenario(given: Given) {
     parsedJob: pipeline.parsedJob,
     parsedDocument,
     resumeSections,
+    parsedResumeDocument,
     metadata: {
       ...pipeline.analysis.metadata,
       executor: 'spec-harness-v0',

@@ -49,7 +49,7 @@ export function generateAnalysis(input: GenerateAnalysisInput): GenerateAnalysis
 function parseResumeText(text: string): Resume {
   const pipeline = buildDocumentPipeline(text);
   const skills = pipeline.structuredResume.skills;
-  const experience = pipeline.structuredResume.experience.length ? [{ id: 'exp-1', role: pipeline.structuredResume.experience[0].role || 'Developer', company: pipeline.structuredResume.experience[0].company || 'Sample', startDate: '2021-01-01', endDate: '2024-01-01' }] : [];
+  const experience = pipeline.structuredResume.experience.length ? [{ id: 'exp-1', title: pipeline.structuredResume.experience[0].role || 'Developer', company: pipeline.structuredResume.experience[0].company || 'Sample', startDate: '2021-01-01', endDate: '2024-01-01' }] : [];
 
   return {
     id: 'resume-1',

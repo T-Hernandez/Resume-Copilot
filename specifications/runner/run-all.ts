@@ -6,6 +6,8 @@ import './../scenarios/edge-cases.scenario';
 import './../scenarios/public-api.scenario';
 import './../scenarios/document-processing.scenario';
 import './../scenarios/section-header-variants.scenario';
+import './../scenarios/parse-experience-education.scenario';
+import './../scenarios/parse-skills.scenario';
 import { runAll } from './runner';
 
 runAll().catch(err => {

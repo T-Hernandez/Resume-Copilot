@@ -33,7 +33,7 @@ function extractSkills(lines: string[]): SkillInstance[] {
 
 function extractExperience(lines: string[]): Resume['experience'] {
   const experienceLines = lines.filter(line => line.toLowerCase().startsWith('experience:') || line.includes('developer') || line.includes('engineer') || line.includes('manager'));
-  return experienceLines.length ? [{ id: 'exp-1', role: 'Developer', company: 'Parsed Company', startDate: '2021-01-01', endDate: '2024-01-01' }] : [];
+  return experienceLines.length ? [{ id: 'exp-1', title: 'Developer', company: 'Parsed Company', startDate: '2021-01-01', endDate: '2024-01-01' }] : [];
 }
 
 function extractEducation(lines: string[]): Resume['education'] {

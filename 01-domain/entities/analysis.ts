@@ -16,6 +16,7 @@ export interface Analysis {
   gaps?: string[];
   strengths?: string[];
   weaknesses?: string[];
+  warnings?: string[];
   confidence?: number;
   metadata?: Record<string, unknown>;
 }

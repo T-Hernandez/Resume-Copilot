@@ -1,4 +1,4 @@
-type Given = { resumePath?: string; jobPath?: string; resumeText?: string; jobText?: string };
+type Given = { resumePath?: string; jobPath?: string; resumeText?: string; jobText?: string; pipelineConfig?: any };
 type Expect = Record<string, any>;
 
 export type ScenarioDef = {

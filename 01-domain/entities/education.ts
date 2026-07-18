@@ -5,4 +5,6 @@ export interface Education {
   field?: string;
   startDate?: string;
   endDate?: string;
+  // See Experience.parseConfidence - same meaning, same 0..100 scale.
+  parseConfidence?: number;
 }
