@@ -7,6 +7,7 @@ import { parseResumeSections } from '../../01-domain/services/parse-resume-secti
 import { parseResumeDocument } from '../../01-domain/services/parse-resume-document';
 import { parseJobDocument } from '../../01-domain/services/parse-job-document';
 import { matchSkills } from '../../01-domain/matching/match-skill';
+import { matchExperience } from '../../01-domain/matching/match-experience';
 import { calculateSubscore } from '../../01-domain/services/calculate-subscore';
 import { calculateOverallScore } from '../../01-domain/services/calculate-overall-score';
 import { PipelineConfig } from '../../01-domain/entities/pipeline-config';
@@ -40,11 +41,20 @@ export async function runScenario(given: Given) {
   // path below on purpose (see ADR discussion in memory) - matchSkill()
   // never produces points, only matched/confidence/evidence.
   const skillMatches = matchSkills(parsedJobDocument.requiredSkills, parsedResumeDocument);
+  // ExperienceMatch follows the exact same Evidence Builder -> Matching
+  // Engine shape as SkillMatch, reusing Match<T>/matchConfidence - only
+  // built when the job actually states a minimum, same reasoning as
+  // matchSkills over an empty requiredSkills list (nothing to compare
+  // against isn't a match failure, it's an absent category).
+  const experienceMatch = parsedJobDocument.minExperienceYears !== undefined
+    ? matchExperience({ minYears: parsedJobDocument.minExperienceYears }, parsedResumeDocument)
+    : undefined;
 
   // Score Engine: consumes Match<T>[] only, never resume/job text directly.
-  // `skills` is the only real category today - experience/education/etc.
-  // don't have a Match<T> implementation yet, so they're left out of the
-  // breakdown entirely rather than faked with a placeholder subscore.
+  // education/keywords/etc. still don't have a Match<T> implementation, so
+  // they're left out of the breakdown entirely rather than faked with a
+  // placeholder subscore - calculateOverallScore already skips categories
+  // missing from the breakdown (proven in score-engine.scenario.ts).
   // Still not wired into the `overall` used by the live analysis below
   // (pipeline.analysis) - exposed separately as scoreEngine* so specs can
   // verify it on its own before it replaces anything.
@@ -53,7 +63,8 @@ export async function runScenario(given: Given) {
     weights: given.pipelineConfig?.weights || { skills: 0.4, experience: 0.25, education: 0.1, keywords: 0.15 }
   };
   const scoreEngineBreakdown: Record<string, number> = {
-    skills: calculateSubscore(skillMatches)
+    skills: calculateSubscore(skillMatches),
+    ...(experienceMatch ? { experience: calculateSubscore([experienceMatch]) } : {})
   };
   const scoreEngineOverall = calculateOverallScore(scoreEngineBreakdown, scoreEnginePipelineConfig);
 
@@ -99,6 +110,7 @@ export async function runScenario(given: Given) {
     parsedResumeDocument,
     parsedJobDocument,
     skillMatches,
+    experienceMatch,
     scoreEngineBreakdown,
     scoreEngineOverall,
     metadata: {
