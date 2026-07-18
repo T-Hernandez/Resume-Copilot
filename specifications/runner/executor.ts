@@ -6,6 +6,7 @@ import { buildDocumentPipeline } from '../../01-domain/services/document-process
 import { parseResumeSections } from '../../01-domain/services/parse-resume-sections';
 import { parseResumeDocument } from '../../01-domain/services/parse-resume-document';
 import { parseJobDocument } from '../../01-domain/services/parse-job-document';
+import { matchSkills } from '../../01-domain/matching/match-skill';
 
 type Given = { resumePath?: string; jobPath?: string; resumeText?: string; jobText?: string; pipelineConfig?: any };
 
@@ -32,6 +33,11 @@ export async function runScenario(given: Given) {
   const resumeSections = parseResumeSections(resumeText);
   const parsedResumeDocument = parseResumeDocument(resumeText);
   const parsedJobDocument = parseJobDocument(jobText);
+  // Evidence-based matching: separate from the score-mixing matchResumeToJob
+  // path below on purpose (see ADR discussion in memory) - matchSkill()
+  // never produces points, only matched/confidence/evidence/reasons. Not
+  // wired into scoring yet; that's the Score Engine's job, still to come.
+  const skillMatches = matchSkills(parsedJobDocument.requiredSkills, parsedResumeDocument);
   const resume = parseResumeSimple(resumeText);
   const job = parseJobSimple(jobText);
 
@@ -73,6 +79,7 @@ export async function runScenario(given: Given) {
     resumeSections,
     parsedResumeDocument,
     parsedJobDocument,
+    skillMatches,
     metadata: {
       ...pipeline.analysis.metadata,
       executor: 'spec-harness-v0',
