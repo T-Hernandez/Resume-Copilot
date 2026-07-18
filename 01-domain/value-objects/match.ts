@@ -4,10 +4,15 @@ import { Evidence } from './evidence';
 // carries no score/points - that's the Score Engine's job, downstream, once
 // it has a batch of these to weigh. A Match only ever answers yes/no (with
 // evidence), never "how many points".
+//
+// No `reasons` field on purpose: `evidence[].source` already says why a
+// match happened ("resume.skills", "resume.experience", ...). A separate
+// reasons list would just be evidence.source restated - one fact, two
+// places to keep in sync. Anything that wants "why" (Score Engine, LLM
+// report) derives it from `evidence` directly.
 export interface Match<T> {
   query: T;
   matched: boolean;
-  confidence: number; // 0..100 - how sure the match itself is, derived from evidence
+  confidence: number; // 0..100 - see matchConfidence() in matching/match-confidence.ts
   evidence: Evidence[];
-  reasons: string[]; // e.g. "canonical-skill", "mentioned-in-experience" - machine-readable tags, not prose
 }

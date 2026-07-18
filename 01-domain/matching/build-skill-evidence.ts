@@ -6,39 +6,39 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+// `\bC++\b` never matches, anywhere, because `\b` needs a word-char/non-word
+// -char transition on BOTH sides, and "+" is a non-word char - so the
+// trailing boundary only fires if a word character comes right after ("C++x"),
+// never after whitespace or punctuation ("C++ and..."). Same problem for
+// "C#", "F#", and anything else ending in a symbol. Lookaround fixes it by
+// only checking that the characters immediately outside the match aren't
+// alphanumeric, regardless of what the match itself starts/ends with - so
+// "Node.js", "ASP.NET", "C++", "C#" all get correct boundaries.
 function mentionsSkill(text: string | undefined, skillQuery: string): boolean {
   if (!text) return false;
-  return new RegExp(`\\b${escapeRegExp(skillQuery)}\\b`, 'i').test(text);
+  const pattern = new RegExp(`(?<![A-Za-z0-9])${escapeRegExp(skillQuery)}(?![A-Za-z0-9])`, 'i');
+  return pattern.test(text);
 }
 
-// Evidence Builder: finds every place in the resume that bears on whether
-// the candidate has `skillQuery`, and how sure each individual finding is.
-// It does not decide whether the skill counts as "matched" overall -
-// that's matchSkill()'s job, in match-skill.ts. Keeping this split means
-// the matching *decision* can change (stricter/looser thresholds, new
-// tie-breaking rules) without touching how evidence gets found.
-export function buildSkillEvidence(skillQuery: string, resume: ParsedResumeDocument): Evidence[] {
-  const normalizer = new DefaultSkillNormalizer();
-  const queryCanonical = normalizer.normalizeSkill(skillQuery).canonical;
+function collectSkillEvidenceFromSkills(
+  skillQuery: string,
+  queryCanonical: string | undefined,
+  resume: ParsedResumeDocument
+): Evidence[] {
+  return resume.skills
+    .filter(skill => (queryCanonical && skill.canonical === queryCanonical) || skill.raw.toLowerCase() === skillQuery.toLowerCase())
+    .map(skill => ({
+      source: 'resume.skills' as const,
+      value: skill.raw,
+      confidence: skill.confidence ?? 100
+    }));
+}
+
+function collectSkillEvidenceFromExperience(skillQuery: string, resume: ParsedResumeDocument): Evidence[] {
   const evidence: Evidence[] = [];
 
-  for (const skill of resume.skills) {
-    const isCanonicalMatch = queryCanonical && skill.canonical === queryCanonical;
-    const isRawMatch = skill.raw.toLowerCase() === skillQuery.toLowerCase();
-    if (isCanonicalMatch || isRawMatch) {
-      evidence.push({
-        source: 'resume.skills',
-        value: skill.raw,
-        confidence: skill.confidence ?? 100
-      });
-    }
-  }
-
   resume.experience.forEach((entry, experienceIndex) => {
-    const bullets = entry.bullets || [];
-    const matchingBullet = bullets.find(bullet => mentionsSkill(bullet, skillQuery));
-    const titleOrCompanyMatch = mentionsSkill(entry.title, skillQuery) || mentionsSkill(entry.company, skillQuery);
-
+    const matchingBullet = (entry.bullets || []).find(bullet => mentionsSkill(bullet, skillQuery));
     if (matchingBullet) {
       evidence.push({
         source: 'resume.experience',
@@ -46,7 +46,10 @@ export function buildSkillEvidence(skillQuery: string, resume: ParsedResumeDocum
         confidence: 80,
         location: { experienceIndex }
       });
-    } else if (titleOrCompanyMatch) {
+      return;
+    }
+
+    if (mentionsSkill(entry.title, skillQuery) || mentionsSkill(entry.company, skillQuery)) {
       evidence.push({
         source: 'resume.experience',
         value: [entry.title, entry.company].filter(Boolean).join(' - '),
@@ -56,15 +59,37 @@ export function buildSkillEvidence(skillQuery: string, resume: ParsedResumeDocum
     }
   });
 
-  if (mentionsSkill(resume.summary, skillQuery)) {
-    evidence.push({ source: 'resume.summary', value: resume.summary!, confidence: 60 });
-  }
+  return evidence;
+}
 
+function collectSkillEvidenceFromSummary(skillQuery: string, resume: ParsedResumeDocument): Evidence[] {
+  return mentionsSkill(resume.summary, skillQuery)
+    ? [{ source: 'resume.summary' as const, value: resume.summary!, confidence: 60 }]
+    : [];
+}
+
+function collectSkillEvidenceFromProjects(skillQuery: string, resume: ParsedResumeDocument): Evidence[] {
   // Projects don't have a structured parser yet (still raw text on
   // ParsedResumeDocument) - scanned the same way as summary until one exists.
-  if (mentionsSkill(resume.projects, skillQuery)) {
-    evidence.push({ source: 'resume.projects', value: resume.projects!, confidence: 55 });
-  }
+  return mentionsSkill(resume.projects, skillQuery)
+    ? [{ source: 'resume.projects' as const, value: resume.projects!, confidence: 55 }]
+    : [];
+}
 
-  return evidence;
+// Evidence Builder: finds every place in the resume that bears on whether
+// the candidate has `skillQuery`, and how sure each individual finding is.
+// It does not decide whether the skill counts as "matched" overall -
+// that's matchSkill()'s job, in match-skill.ts. Each source gets its own
+// small extractor so adding a new one (technologies, achievements, ...) is
+// adding a function and a line here, not editing a monolith.
+export function buildSkillEvidence(skillQuery: string, resume: ParsedResumeDocument): Evidence[] {
+  const normalizer = new DefaultSkillNormalizer();
+  const queryCanonical = normalizer.normalizeSkill(skillQuery).canonical;
+
+  return [
+    ...collectSkillEvidenceFromSkills(skillQuery, queryCanonical, resume),
+    ...collectSkillEvidenceFromExperience(skillQuery, resume),
+    ...collectSkillEvidenceFromSummary(skillQuery, resume),
+    ...collectSkillEvidenceFromProjects(skillQuery, resume)
+  ];
 }
