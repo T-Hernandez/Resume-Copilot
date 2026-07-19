@@ -15,6 +15,7 @@ import { calculateOverallScore } from '../../01-domain/services/calculate-overal
 import { generateAnalysisV2 } from '../../01-domain/services/generate-analysis-v2';
 import { generateAnalysisV1, parseResumeTextV1, parseJobTextV1 } from '../../01-domain/services/generate-analysis-v1';
 import { buildRecommendationInput } from '../../01-domain/services/build-recommendation-input';
+import { buildDeterministicRecommendations } from '../../01-domain/services/build-recommendations';
 import { PipelineConfig } from '../../01-domain/entities/pipeline-config';
 
 type Given = { resumePath?: string; jobPath?: string; resumeText?: string; jobText?: string; pipelineConfig?: any };
@@ -97,6 +98,9 @@ export async function runScenario(given: Given) {
   // allowed to read - exposed here only so specs can verify the packaging
   // itself, independent of any LLM wiring (which does not exist yet).
   const recommendationInput = buildRecommendationInput(analysisV2.analysis);
+  // Deterministic recommendation baseline (no LLM) - exposed so specs can
+  // verify it directly, same pattern as recommendationInput above.
+  const deterministicRecommendations = buildDeterministicRecommendations(recommendationInput);
 
   const resume = parseResumeSimple(resumeText);
   const job = parseJobSimple(jobText);
@@ -159,6 +163,11 @@ export async function runScenario(given: Given) {
     scoreEngineOverall,
     analysisV2: analysisV2.analysis,
     recommendationInput,
+    deterministicRecommendations,
+    // Same reasoning as recommendationInput above - exposed so specs can
+    // verify the per-category grouping directly, independent of any
+    // CLI/API rendering (which does not exist in the domain layer).
+    scoreExplanation: analysisV2.explanation,
     // Exposed only so specs can prove analysisV2.breakdown contains exactly
     // the categories a Match<T> producer actually covered - no more, no
     // less - without needing an "expected undefined" check the runner

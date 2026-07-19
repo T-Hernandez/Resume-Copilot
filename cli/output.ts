@@ -1,5 +1,6 @@
 import { Analysis } from '../01-domain/entities/analysis';
 import { Recommendation } from '../01-domain/value-objects/recommendation';
+import { CategoryExplanation } from '../01-domain/services/build-score-explanation';
 
 // confidence is `undefined` (not 0) when nothing was actually evaluated -
 // see generate-analysis-v2.ts. The CLI reflects that distinction rather
@@ -31,7 +32,35 @@ function printSection(title: string, items: string[] | undefined): void {
   }
 }
 
-export function printAnalysis(analysis: Analysis): void {
+// 10-cell bar, floor()'d rather than round()'d so e.g. 75 reads as 7 filled
+// cells, not 8 - a partial cell would misleadingly round a score up.
+function formatBar(score: number): string {
+  const filled = Math.max(0, Math.min(10, Math.floor(score / 10)));
+  return '█'.repeat(filled) + '░'.repeat(10 - filled);
+}
+
+// Per-category visual breakdown, replacing the old flat "Breakdown:"
+// percentage list plus the separate Strengths/Weaknesses/Gaps sections -
+// explanation already carries the same matched/missing facts those three
+// sections did, just grouped by category instead of flattened, so printing
+// both would only repeat the same facts in two shapes. See
+// 01-domain/services/build-score-explanation.ts.
+function printExplanation(explanation: CategoryExplanation[]): void {
+  console.log('\nBreakdown:');
+  for (const category of explanation) {
+    const label = category.category.charAt(0).toUpperCase() + category.category.slice(1);
+    console.log(`\n${label}`);
+    console.log(`${formatBar(category.score)} ${category.score}`);
+    for (const item of category.matched) {
+      console.log(`  + ${item}`);
+    }
+    for (const item of category.missing) {
+      console.log(`  - ${item} (missing)`);
+    }
+  }
+}
+
+export function printAnalysis(analysis: Analysis, explanation: CategoryExplanation[]): void {
   console.log('Resume Copilot - Analysis');
   console.log('='.repeat(40));
   console.log(`Overall score: ${formatOverall(analysis.overall, analysis.confidence)}`);
@@ -40,22 +69,15 @@ export function printAnalysis(analysis: Analysis): void {
     console.log('Reason: the job description contains no evaluable requirements.');
   }
 
-  console.log('\nBreakdown:');
-  for (const [category, score] of Object.entries(analysis.breakdown)) {
-    console.log(`  ${category}: ${score}%`);
-  }
-
-  printSection('Strengths', analysis.strengths);
-  printSection('Weaknesses', analysis.weaknesses);
-  printSection('Gaps', analysis.gaps);
+  printExplanation(explanation);
 
   if (analysis.warnings && analysis.warnings.length) {
     printSection('Warnings', analysis.warnings);
   }
 }
 
-export function printRecommendations(recommendations: Recommendation[]): void {
-  console.log('\nRecommendations:');
+export function printRecommendations(recommendations: Recommendation[], title = 'Recommendations'): void {
+  console.log(`\n${title}:`);
   if (!recommendations.length) {
     console.log('  (none)');
     return;

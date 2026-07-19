@@ -10,11 +10,21 @@ import { calculateSubscore } from './calculate-subscore';
 import { calculateOverallScore } from './calculate-overall-score';
 import { buildWeaknesses } from './build-weaknesses';
 import { buildStrengths } from './build-strengths';
+import { buildScoreExplanation, CategoryExplanation } from './build-score-explanation';
+import { deterministicId } from './deterministic-id';
 
 export interface GenerateAnalysisV2Input {
   resumeText: string;
   jobText: string;
   pipelineConfig: PipelineConfig;
+  // Optional caller-supplied identity - when a consumer already has a real
+  // id (e.g. compareResumesToJob's per-candidate id), that id should end up
+  // on the Analysis directly rather than being thrown away. Falls back to a
+  // deterministic hash of the text when omitted - still real identity
+  // (two different resumes get two different ids), just not a caller-chosen
+  // one. See deterministic-id.ts.
+  resumeId?: string;
+  jobId?: string;
 }
 
 export interface GenerateAnalysisV2Pipeline {
@@ -23,6 +33,7 @@ export interface GenerateAnalysisV2Pipeline {
   skillMatches: SkillMatch[];
   experienceMatch?: ExperienceMatch;
   educationMatch?: EducationMatch;
+  explanation: CategoryExplanation[];
   analysis: Analysis;
 }
 
@@ -90,6 +101,7 @@ export function generateAnalysisV2(input: GenerateAnalysisV2Input): GenerateAnal
   const gaps = skillMatches.filter(match => !match.matched).map(match => match.query);
   const weaknesses = buildWeaknesses({ skillMatches, experienceMatch, educationMatch });
   const strengths = buildStrengths({ skillMatches, experienceMatch, educationMatch });
+  const explanation = buildScoreExplanation({ breakdown, skillMatches, experienceMatch, educationMatch });
 
   const warnings: string[] = [];
   if (
@@ -113,10 +125,13 @@ export function generateAnalysisV2(input: GenerateAnalysisV2Input): GenerateAnal
     ? Math.round(allMatches.reduce((sum, match) => sum + match.confidence, 0) / allMatches.length)
     : undefined;
 
+  const resumeId = input.resumeId ?? deterministicId('resume', input.resumeText);
+  const jobId = input.jobId ?? deterministicId('job', input.jobText);
+
   const analysis: Analysis = {
-    id: 'analysis-resume-1-job-1',
-    resumeId: 'resume-1',
-    jobId: 'job-1',
+    id: `analysis-${resumeId}-${jobId}`,
+    resumeId,
+    jobId,
     algorithmVersion: input.pipelineConfig.algorithmVersion,
     timestamp: new Date().toISOString(),
     overall,
@@ -141,6 +156,7 @@ export function generateAnalysisV2(input: GenerateAnalysisV2Input): GenerateAnal
     skillMatches,
     experienceMatch,
     educationMatch,
+    explanation,
     analysis
   };
 }

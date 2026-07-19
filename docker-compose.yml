@@ -1,0 +1,12 @@
+services:
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      # Optional - only needed for the /analyze `recommend: true` opt-in
+      # path (ClaudeRecommendationGenerator). Everything else runs with no
+      # credentials at all. Defaults to empty rather than requiring a .env
+      # file to exist, so `docker compose up` works with zero setup.
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}

@@ -1,26 +1,148 @@
-# Resume-Copilot
-An AI copilot to rate and improve your CV
+# Resume Copilot
 
-## Repository shape
+A deterministic ATS-style resume/job matching engine, with an explainable score, a REST API, and a CLI - built around one rule: **the backend decides the score, an LLM only ever explains it.**
 
-- Domain engine lives under [01-domain](01-domain)
-- Benchmark scenarios live under [specifications](specifications)
-- Example fixtures live under [fixtures](fixtures)
+```
+Resume Copilot - Analysis
+========================================
+Overall score: 53%
+Confidence: 52%
 
-## Engine status: v1.0, frozen (2026-07-18)
+Breakdown:
 
-The deterministic core - Parser → Evidence Builder → `Match<T>` → Score Engine → `Analysis` - is stable and considered done for a first version. Architecture and naming are documented in [ADR-004](ADR/ADR-004-parsed-document-match-model.md) and [Ubiquitous-Language.md](Ubiquitous-Language.md).
+Skills
+████░░░░░░ 40
+  + React
+  - TypeScript (missing)
 
-What "done" means concretely:
-- Parsing (resume + job) is config-driven and covers real-world header/entry/skill shapes, not just synthetic fixtures.
-- Matching (`SkillMatch`, `ExperienceMatch`, `EducationMatch`) is evidence-based; `matched` and `confidence` answer different questions on purpose, and never mix a score into the match itself.
-- Scoring (`calculateSubscore`, `calculateOverallScore`) is config-driven off `PipelineConfig` weights, with zero hardcoded categories or magic constants.
-- `confidence` semantics are decided and documented (`01-domain/services/generate-analysis-v2.ts`): the real average of every produced `Match<T>`'s confidence, or `undefined` - not `0` - when nothing was required at all.
-- Validated against 22 real resume/job pairs spanning strong/partial/total mismatch, junior↔senior, incomplete/short/long CVs, alias resolution, symbol-named technologies, overlapping experience, ambiguous dates, and jobs with missing requirement fields (`npm run compare`, `specifications/reports/compare-v1-v2.ts`).
-- 33/33 behavioral specs pass (`npm run specs`); `tsc --noEmit` is clean.
+Experience
+███████░░░ 75
+  + 1+ years required
 
-**Migration complete (2026-07-18):** `generateAnalysis()` - the public entry point - now runs `generateAnalysisV2` by default. `generateAnalysisV1` is not deleted: it stays `@deprecated`, directly importable, and is exactly what `npm run compare` diffs V2 against on every fixture. Retiring it fully (deleting the code) is a later, separate decision - this migration only changed which engine is the default.
+Recommendations:
+  [high] Add or gain experience with TypeScript - it's a required skill for
+         this role that your resume doesn't currently show.
+```
 
-Fase 2 (deterministic explanation facts) has started: `buildWeaknesses`/`buildStrengths` populate `Analysis.weaknesses`/`strengths` across skills, experience, and education; `buildRecommendationInput` packages those facts into the only shape a future recommendation generator may read. The `RecommendationGenerator` port exists (`01-domain/services/recommendation-generator.ts`); no implementation exists yet - that requires a new infrastructure layer, an LLM SDK dependency, and API credentials, none of which exist in this repo, per `01-domain/README.md`'s own no-external-deps rule.
+## Why deterministic
 
-New work past the engine freeze (more `Match<T>` categories beyond skill/experience/education, the LLM adapter, product/UI) continues in project roadmap.
+Most "AI resume matchers" ask an LLM to invent a score. That number isn't reproducible, isn't explainable, and drifts between runs on the exact same input. Resume Copilot's core decision (ADR-001) is the opposite: **parsing, matching, and scoring are 100% deterministic code with zero LLM involvement.** Given the same resume and job text, `overall` is byte-identical every time. An LLM is only ever an *optional* layer on top that rephrases already-decided facts into prose - it can never see raw resume/job text, and it cannot change the score, the gaps, or the weaknesses.
+
+## Architecture
+
+```
+01-domain/        Parser -> Evidence -> Match<T> -> Score Engine -> Analysis.
+                   Zero external dependencies. Pure, deterministic, unit-tested.
+
+infrastructure/    The only place external SDKs are allowed: PDF/DOCX text
+                   extraction (pdf-parse, mammoth), the Claude adapter
+                   (@anthropic-ai/sdk) implementing the domain's
+                   RecommendationGenerator port.
+
+config/            Shared defaults (e.g. DEFAULT_PIPELINE_CONFIG) used by
+                   every consumer below, so weights live in exactly one place.
+
+cli/               First consumer of the domain: reads files, calls
+                   generateAnalysis(), prints the result. No domain logic.
+
+api/               Second consumer of the domain: an Express REST API over
+                   the exact same generateAnalysis() call. No domain logic.
+
+specifications/    The test suite: a small declarative Scenario DSL for
+                   domain behavior, plus standalone spec scripts for
+                   infrastructure/API/service-layer integration checks.
+```
+
+Every consumer (CLI, API, the spec harness itself) goes through the same single entry point, `generateAnalysis()` in `01-domain/services/generate-analysis.ts`. Nothing outside `01-domain` computes a score, a match, or a gap.
+
+## Quick start
+
+### Docker (one command)
+
+```bash
+docker compose up
+```
+
+Starts the API on `http://localhost:3000`. No API key, no setup - the deterministic engine (parsing, matching, scoring, the visual score explanation, and baseline recommendations) needs no credentials at all. Set `ANTHROPIC_API_KEY` in your shell (or a `.env` file, see `.env.example`) only if you also want the optional AI-enhanced recommendations.
+
+### Local
+
+```bash
+npm install
+npm run specs           # 0 failed / 52 total
+npm run analyze -- examples/resume-sparse.txt examples/job-react-senior.txt
+npm run api              # starts the REST API on :3000
+```
+
+## CLI
+
+```bash
+# Single resume vs. a single job
+npm run analyze -- <resume.(txt|pdf|docx)> <job.(txt|pdf|docx)> [--recommend]
+
+# Rank multiple resumes against one job
+npm run compare-resumes -- <job.(txt|pdf|docx)> <resume1> <resume2> [...more]
+```
+
+`--recommend` adds an optional AI-enhanced recommendations section (requires `ANTHROPIC_API_KEY`) on top of the deterministic recommendations, which are always printed regardless.
+
+## API
+
+### `POST /analyze`
+
+```bash
+curl -X POST http://localhost:3000/analyze \
+  -H "Content-Type: application/json" \
+  -d '{
+    "resume": {"text": "Skills: React\nExperience\nCompany A\nEngineer\n2022 - 2023"},
+    "job": {"text": "Required Skills: React, TypeScript\nMinExperienceYears: 1"}
+  }'
+```
+
+A resume/job can be `{"text": "..."}` or `{"base64": "...", "format": "pdf"|"docx"}` - PDF/DOCX go through the same extractor the CLI uses. Add `"recommend": true` to also get AI-enhanced recommendations (falls back to `recommendationError` on the response if Claude is unreachable or uncredentialed - the deterministic `analysis`/`explanation`/`recommendations` are still returned).
+
+Response: `{ analysis, explanation, recommendations, aiRecommendations?, recommendationError? }`.
+
+### `POST /compare`
+
+```bash
+curl -X POST http://localhost:3000/compare \
+  -H "Content-Type: application/json" \
+  -d '{
+    "job": {"text": "Required Skills: React, TypeScript\nMinExperienceYears: 1"},
+    "resumes": [
+      {"id": "alice", "document": {"text": "Skills: React, TypeScript\n..."}},
+      {"id": "bob",   "document": {"text": "Skills: React\n..."}}
+    ]
+  }'
+```
+
+Runs the same `generateAnalysis()` pipeline once per candidate and ranks the results (by `overall`, tiebroken by `confidence`). Response: `{ compared, algorithmVersion, generatedAt, results: [{ rank, id, analysis }] }`.
+
+## What "deterministic" actually buys you
+
+- **`overall`** - a weighted average (`PipelineConfig.weights`) over per-category subscores, each derived only from `Match<T>` evidence. No fabricated categories, no score-boosting floors.
+- **`confidence`** - the real average confidence across every `Match<T>` that was actually produced, or `undefined` (never `0`) when the job stated no requirements at all - "nothing was evaluated" is a different claim from "low confidence."
+- **`explanation`** - the same facts as `breakdown`, grouped by category with `matched`/`missing` skill/requirement lists, so a frontend can render bars, rings, or anything else without re-deriving which fact belongs to which category.
+- **`recommendations`** - always present, zero-dependency, rule-based (`buildDeterministicRecommendations`). One line per gap or unmet requirement, severity-tagged. No network call.
+- **`resumeId`/`jobId`** - a deterministic content hash by default, or a caller-supplied id (e.g. `compare-resumes`'s per-candidate id) when one is given - never a hardcoded placeholder.
+
+## Testing
+
+```bash
+npm run specs      # domain scenarios + infrastructure + API + service-layer specs (52 total)
+npm run compare     # diagnostic: the old V1 engine vs. the current V2 engine on 22 real resume/job pairs
+```
+
+The domain layer (`01-domain`) is tested through a small declarative Scenario DSL (`given` resume/job text, `expect` dot-path assertions on the resulting analysis - see `specifications/runner/`). Infrastructure (PDF/DOCX extraction against real hand-built fixture files), the API handlers, and the comparison/ranking services each have their own standalone spec scripts, all wired into the one `npm run specs` command.
+
+## Design docs
+
+- [ADR-001](ADR/ADR-001-deterministic-scoring.md) - why scoring is deterministic, never LLM-driven.
+- [ADR-004](ADR/ADR-004-parsed-document-match-model.md) - the `ParsedResumeDocument`/`ParsedJobDocument`/`Match<T>` model.
+- [Ubiquitous-Language.md](Ubiquitous-Language.md) - shared vocabulary across domain and docs.
+- `01-domain/README.md` - the one hard rule for that folder: no external dependencies, ever.
+
+## Project status
+
+Engine, CLI, API, PDF/DOCX ingestion, multi-candidate comparison, visual score explanation, and deterministic recommendations are built and tested. The Claude-based recommendation enhancement is opt-in and needs your own API key. Not built yet: persistence/history, a web frontend, and further `Match<T>` categories (languages, certifications) beyond skills/experience/education.

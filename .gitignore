@@ -3,3 +3,6 @@
 state
 .noodle/
 
+node_modules/
+.env
+

@@ -40,8 +40,15 @@ async function run(): Promise<void> {
     if (typeof result.analysis.overall !== 'number') {
       throw new Error(`expected analysis.overall to be a number, got: ${JSON.stringify(result.analysis.overall)}`);
     }
-    if (result.recommendations !== undefined) {
-      throw new Error('expected no recommendations when recommend is omitted (defaults to false)');
+    const skillsExplanation = result.explanation.find(category => category.category === 'skills');
+    if (!skillsExplanation?.matched.includes('React')) {
+      throw new Error(`expected a skills explanation with React matched, got: ${JSON.stringify(result.explanation)}`);
+    }
+    if (!result.recommendations.length) {
+      throw new Error('expected the deterministic recommendations baseline to be present even when recommend is omitted');
+    }
+    if (result.aiRecommendations !== undefined) {
+      throw new Error('expected no aiRecommendations when recommend is omitted (defaults to false)');
     }
   });
 

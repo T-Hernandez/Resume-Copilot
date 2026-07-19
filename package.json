@@ -1,11 +1,13 @@
 {
   "scripts": {
-    "specs": "node --require ts-node/register/transpile-only specifications/runner/run-all.ts && npm run specs:infra && npm run specs:api",
+    "specs": "node --require ts-node/register/transpile-only specifications/runner/run-all.ts && npm run specs:infra && npm run specs:api && npm run specs:services",
     "specs:infra": "node --require ts-node/register/transpile-only specifications/infrastructure/extract-text.spec.ts",
-    "specs:api": "node --require ts-node/register/transpile-only specifications/api/analyze-handler.spec.ts",
+    "specs:api": "node --require ts-node/register/transpile-only specifications/api/analyze-handler.spec.ts && node --require ts-node/register/transpile-only specifications/api/compare-handler.spec.ts",
+    "specs:services": "node --require ts-node/register/transpile-only specifications/services/compare-resumes.spec.ts",
     "compare": "node --require ts-node/register/transpile-only specifications/reports/compare-v1-v2.ts",
     "analyze": "node --require ts-node/register/transpile-only cli/analyze.ts",
-    "api": "node --require ts-node/register/transpile-only api/server.ts"
+    "api": "node --require ts-node/register/transpile-only api/server.ts",
+    "compare-resumes": "node --require ts-node/register/transpile-only cli/compare-resumes.ts"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",

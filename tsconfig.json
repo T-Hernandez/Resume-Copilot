@@ -9,5 +9,5 @@
     "types": ["node"],
     "ignoreDeprecations": "5.0"
   },
-  "include": ["specifications/**/*.ts", "01-domain/**/*.ts"]
+  "include": ["specifications/**/*.ts", "01-domain/**/*.ts", "cli/**/*.ts", "api/**/*.ts", "infrastructure/**/*.ts", "config/**/*.ts"]
 }

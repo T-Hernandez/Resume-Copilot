@@ -3,16 +3,20 @@ import { PipelineConfig } from '../entities/pipeline-config';
 import { generateAnalysisV2 } from './generate-analysis-v2';
 import { ParsedResumeDocument } from './parse-resume-document';
 import { ParsedJobDocument } from './parse-job-document';
+import { CategoryExplanation } from './build-score-explanation';
 
 export interface GenerateAnalysisInput {
   resume: string;
   job: string;
   pipelineConfig: PipelineConfig;
+  resumeId?: string;
+  jobId?: string;
 }
 
 export interface GenerateAnalysisPipeline {
   parsedResumeDocument: ParsedResumeDocument;
   parsedJobDocument: ParsedJobDocument;
+  explanation: CategoryExplanation[];
   analysis: Analysis;
 }
 
@@ -39,12 +43,15 @@ export function generateAnalysis(input: GenerateAnalysisInput): GenerateAnalysis
   const result = generateAnalysisV2({
     resumeText: input.resume,
     jobText: input.job,
-    pipelineConfig: input.pipelineConfig
+    pipelineConfig: input.pipelineConfig,
+    resumeId: input.resumeId,
+    jobId: input.jobId
   });
 
   return {
     parsedResumeDocument: result.parsedResumeDocument,
     parsedJobDocument: result.parsedJobDocument,
+    explanation: result.explanation,
     analysis: result.analysis
   };
 }
