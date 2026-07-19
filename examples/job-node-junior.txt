@@ -1,0 +1,6 @@
+Title: Junior Node.js Developer
+Description: Buscamos desarrollador/a junior para sumarse al equipo de backend, con ganas de aprender Node.js y bases de datos relacionales.
+Required Skills: Node.js; SQL
+Preferred: TypeScript; Docker
+MinExperienceYears: 1
+Keywords: Learning; Teamwork; APIs

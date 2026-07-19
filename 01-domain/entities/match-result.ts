@@ -1,3 +1,11 @@
+/**
+ * @deprecated Superseded by Match<T> (value-objects/match.ts) per ADR-004.
+ * MatchResult embeds `score` directly on the match, coupling "did this
+ * match" with "how many points" - the design ADR-004 replaced after that
+ * coupling was traced to 4 real scoring defects in generateAnalysisV1 (see
+ * specifications/reports/compare-v1-v2.ts). Kept only because V1 is still
+ * live; do not use in new code.
+ */
 export type MatchType =
   | 'skill'
   | 'experience'

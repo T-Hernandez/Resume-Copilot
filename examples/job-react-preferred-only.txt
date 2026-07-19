@@ -1,0 +1,4 @@
+Title: React Developer (Open to Junior or Mid-level)
+Description: Buscamos desarrollador/a con interés en React; se valorará experiencia previa pero no es excluyente.
+Preferred: React; TypeScript; Next.js
+Keywords: SPA; Frontend

@@ -1,0 +1,8 @@
+Name: Elena Kowalski
+Title: Systems Engineer
+Summary: Ingeniera de sistemas con experiencia en C++ y C#.
+Skills: C++, C#, Windows
+Experience:
+- CoreSystems — Systems Engineer (2018-2023)
+  - Desarrollé componentes en C++ de alto rendimiento
+  - Mantuve servicios en C# sobre .NET

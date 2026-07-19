@@ -1,5 +1,6 @@
 import { MatchResult } from '../entities/match-result';
 
+/** @deprecated Part of the V1 matching path - see ADR-004. Use matchSkill (01-domain/matching/match-skill.ts) for new work. */
 export function compareSkill(resumeSkill: string, jobSkill: string): MatchResult {
   const exact = resumeSkill.toLowerCase() === jobSkill.toLowerCase();
   return {

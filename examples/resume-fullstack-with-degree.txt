@@ -1,0 +1,13 @@
+Name: Priya Shah
+Title: Backend Developer
+Summary: Backend developer con experiencia en Node.js y bases de datos relacionales.
+Skills: Node.js, PostgreSQL, Docker
+Experience:
+- DataWorks — Backend Developer (2020-2024)
+  - Diseñé APIs REST en Node.js
+  - Optimicé consultas en PostgreSQL
+
+Education:
+Tech University
+BSc Computer Science
+2016 - 2020

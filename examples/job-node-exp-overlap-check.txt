@@ -1,0 +1,5 @@
+Title: Backend Developer
+Description: Buscamos desarrollador/a backend con Node.js y SQL.
+Required Skills: Node.js; SQL
+MinExperienceYears: 5
+Keywords: APIs; Backend

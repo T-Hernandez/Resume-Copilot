@@ -1,0 +1,5 @@
+Title: Backend Engineer
+Description: Buscamos ingeniero/a backend con experiencia consolidada en Node.js.
+Required Skills: Node.js; PostgreSQL
+MinExperienceYears: 8
+Keywords: APIs; SQL

@@ -1,0 +1,4 @@
+Title: Frontend Developer
+Description: Buscamos desarrollador/a frontend con buen dominio de React y TypeScript.
+Required Skills: React; TypeScript
+Keywords: SPA; UI

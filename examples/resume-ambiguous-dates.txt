@@ -1,0 +1,8 @@
+Name: Noah Fischer
+Title: Frontend Developer
+Summary: Desarrollador frontend con experiencia en React.
+Skills: React, TypeScript, HTML, CSS
+Experience:
+- Pixel Studio — Frontend Developer
+  Desde 2021 hasta la actualidad
+  - Construí interfaces en React y TypeScript

@@ -1,0 +1,8 @@
+Name: Diego Morales
+Title: Full Stack Developer
+Summary: Desarrollador full stack con experiencia en ReactJS y Postgres.
+Skills: ReactJS, Postgres, Node
+Experience:
+- Nimbus Labs — Full Stack Developer (2019-2023)
+  - Desarrollé interfaces con ReactJS
+  - Administré bases de datos Postgres

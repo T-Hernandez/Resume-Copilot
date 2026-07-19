@@ -1,0 +1,6 @@
+Title: Backend Developer
+Description: Buscamos desarrollador/a backend con base sólida en Node.js.
+Required Skills: Node.js; PostgreSQL
+MinExperienceYears: 3
+Education: Bachelor's degree required
+Keywords: APIs; SQL

@@ -1,0 +1,5 @@
+Title: Full Stack Developer
+Description: Buscamos desarrollador/a full stack con experiencia en React, Node.js y PostgreSQL.
+Required Skills: React; Node.js; PostgreSQL
+MinExperienceYears: 3
+Keywords: Full Stack; APIs

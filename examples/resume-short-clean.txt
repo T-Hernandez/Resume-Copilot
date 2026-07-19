@@ -1,0 +1,7 @@
+Name: Maya Chen
+Title: Junior Frontend Developer
+Summary: Recién graduada con experiencia en React.
+Skills: React, JavaScript
+Experience:
+- Bright Apps — Junior Frontend Developer (2023-2024)
+  - Construí componentes en React

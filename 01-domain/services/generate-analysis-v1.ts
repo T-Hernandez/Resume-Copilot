@@ -5,6 +5,13 @@ import { PipelineConfig } from '../entities/pipeline-config';
 import { DefaultSkillNormalizer } from './skill-normalizer';
 import { matchResumeToJob } from '../matching/match-resume-to-job';
 
+/**
+ * @deprecated Superseded by generateAnalysisV2 (generate-analysis-v2.ts) per
+ * ADR-004. Kept live and unmodified so specifications/reports/compare-v1-v2.ts
+ * can keep diffing it against V2 on real fixtures until V1 is formally
+ * retired - do not add new heuristics here, and do not build new features
+ * against this function. See project memory for the retirement plan.
+ */
 export function generateAnalysisV1(resume: Resume, job: Job, pipelineConfig: PipelineConfig): Analysis {
   const normalizer = new DefaultSkillNormalizer();
   const warnings: string[] = [];

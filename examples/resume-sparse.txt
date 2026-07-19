@@ -1,0 +1,4 @@
+Name: Sam Torres
+Skills: React
+Experience:
+Worked on some frontend projects

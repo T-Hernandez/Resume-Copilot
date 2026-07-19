@@ -8,6 +8,7 @@ import { matchEducation, EducationMatch } from '../matching/match-education';
 import { detectDegreeLevel } from '../matching/degree-level';
 import { calculateSubscore } from './calculate-subscore';
 import { calculateOverallScore } from './calculate-overall-score';
+import { buildWeaknesses } from './build-weaknesses';
 
 export interface GenerateAnalysisV2Input {
   resumeText: string;
@@ -43,6 +44,21 @@ export interface GenerateAnalysisV2Pipeline {
 //   number, not a floor nudged up for a better-feeling result.
 // - confidence is the real average of every Match<T>'s own confidence, not
 //   a fixed 85 whenever there are no warnings.
+//
+// confidence semantics (decided, documented here - do not revisit without a
+// new real case, see project memory): confidence in the matches actually
+// performed, i.e. Math.round(average of every produced Match<T>'s own
+// confidence). When zero Match<T> objects exist at all - a job with no
+// required skills, no MinExperienceYears, and no recognizable education
+// requirement - confidence is `undefined` ("not applicable"), never `0`.
+// `0` would claim "no confidence in this result"; the true situation is
+// "nothing was asked, so nothing was evaluated" - a different claim.
+// Concretely, this is what stops `overall: 100` (a real, correct answer to
+// "of everything required, how much was met" when nothing was required)
+// from reading alongside a `confidence: 0` that looks like it contradicts
+// the 100, when both were individually correct under the old always-a-number
+// formula. Found via the preferred-only fixture (job-react-preferred-only.txt)
+// in the real corpus - see specifications/reports/compare-v1-v2.ts.
 // - `matches` (the legacy MatchResult[] shape) is intentionally left empty:
 //   MatchResult carries a per-item `score`, and inventing one per match here
 //   would be exactly the score-into-matching mixing this pipeline exists to
@@ -72,6 +88,7 @@ export function generateAnalysisV2(input: GenerateAnalysisV2Input): GenerateAnal
 
   const matchedSkills = skillMatches.filter(match => match.matched).map(match => match.query);
   const gaps = skillMatches.filter(match => !match.matched).map(match => match.query);
+  const weaknesses = buildWeaknesses({ skillMatches, experienceMatch, educationMatch });
 
   const warnings: string[] = [];
   if (
@@ -88,9 +105,12 @@ export function generateAnalysisV2(input: GenerateAnalysisV2Input): GenerateAnal
     ...(experienceMatch ? [experienceMatch] : []),
     ...(educationMatch ? [educationMatch] : [])
   ];
+  if (!allMatches.length) {
+    warnings.push('No requirements were evaluated');
+  }
   const confidence = allMatches.length
     ? Math.round(allMatches.reduce((sum, match) => sum + match.confidence, 0) / allMatches.length)
-    : 0;
+    : undefined;
 
   const analysis: Analysis = {
     id: 'analysis-resume-1-job-1',
@@ -103,6 +123,7 @@ export function generateAnalysisV2(input: GenerateAnalysisV2Input): GenerateAnal
     matches: [],
     gaps,
     strengths: matchedSkills,
+    weaknesses,
     warnings,
     confidence,
     metadata: {

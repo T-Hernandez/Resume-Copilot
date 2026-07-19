@@ -1,0 +1,7 @@
+Name: Jordan Lee
+Title: Frontend Engineer
+Summary: Ingeniero frontend con foco en aplicaciones web modernas.
+Experience:
+- Webify — Frontend Engineer (2021-2024)
+  - Construí interfaces con React y TypeScript
+  - Optimicé el rendimiento con code splitting

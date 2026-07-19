@@ -1,0 +1,10 @@
+Name: Sam Okafor
+Title: Backend Developer
+Summary: Backend developer con experiencia en Node.js.
+Skills: Node.js, SQL
+Experience:
+- Northwind Corp — Backend Developer (2020-2024)
+  - Desarrollé servicios backend en Node.js
+
+- Freelance — Backend Developer (2022-2024)
+  - Consultoría independiente en Node.js para clientes externos

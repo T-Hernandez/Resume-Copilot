@@ -1,0 +1,27 @@
+Name: Alicia Fernandez
+Title: Senior Backend Engineer
+Summary: Ingeniera backend con más de una década de experiencia diseñando sistemas distribuidos, APIs y pipelines de datos en distintas industrias.
+Skills: Node.js, TypeScript, PostgreSQL, Docker, Kubernetes, AWS, Redis, GraphQL, REST, CI/CD
+
+Experience:
+- Orbital Systems — Staff Backend Engineer (2021-2024)
+  - Lideré la migración de monolito a microservicios en Node.js
+  - Diseñé pipelines de CI/CD sobre AWS y Kubernetes
+  - Mentoricé a un equipo de 5 ingenieros backend
+
+- Vertex Software — Senior Backend Engineer (2017-2021)
+  - Construí APIs REST y GraphQL para el producto principal
+  - Optimicé consultas PostgreSQL reduciendo latencia en 40%
+
+- DataForge — Backend Engineer (2014-2017)
+  - Desarrollé servicios en Node.js con Redis como caché
+  - Implementé pruebas automatizadas y monitoreo
+
+Education:
+State Polytechnic University
+BSc Computer Science
+2010 - 2014
+
+Projects:
+- Sistema de pagos distribuido con reconciliación automática
+- Plataforma interna de observabilidad para microservicios

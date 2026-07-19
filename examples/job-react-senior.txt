@@ -1,0 +1,6 @@
+Title: Senior React Engineer
+Description: Buscamos ingeniero/a senior de frontend para liderar el desarrollo de aplicaciones React a gran escala.
+Required Skills: React; TypeScript; System Design
+Preferred: GraphQL; Next.js
+MinExperienceYears: 5
+Keywords: Architecture; Mentoring; Scalability
