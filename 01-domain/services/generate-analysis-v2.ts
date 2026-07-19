@@ -9,6 +9,7 @@ import { detectDegreeLevel } from '../matching/degree-level';
 import { calculateSubscore } from './calculate-subscore';
 import { calculateOverallScore } from './calculate-overall-score';
 import { buildWeaknesses } from './build-weaknesses';
+import { buildStrengths } from './build-strengths';
 
 export interface GenerateAnalysisV2Input {
   resumeText: string;
@@ -86,9 +87,9 @@ export function generateAnalysisV2(input: GenerateAnalysisV2Input): GenerateAnal
   };
   const overall = calculateOverallScore(breakdown, input.pipelineConfig);
 
-  const matchedSkills = skillMatches.filter(match => match.matched).map(match => match.query);
   const gaps = skillMatches.filter(match => !match.matched).map(match => match.query);
   const weaknesses = buildWeaknesses({ skillMatches, experienceMatch, educationMatch });
+  const strengths = buildStrengths({ skillMatches, experienceMatch, educationMatch });
 
   const warnings: string[] = [];
   if (
@@ -122,7 +123,7 @@ export function generateAnalysisV2(input: GenerateAnalysisV2Input): GenerateAnal
     breakdown,
     matches: [],
     gaps,
-    strengths: matchedSkills,
+    strengths,
     weaknesses,
     warnings,
     confidence,

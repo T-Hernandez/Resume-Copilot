@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { generateAnalysis } from '../../01-domain/services/generate-analysis';
+import { generateAnalysisV1, parseResumeTextV1, parseJobTextV1 } from '../../01-domain/services/generate-analysis-v1';
 import { generateAnalysisV2 } from '../../01-domain/services/generate-analysis-v2';
 import { PipelineConfig } from '../../01-domain/entities/pipeline-config';
 
@@ -9,6 +9,11 @@ import { PipelineConfig } from '../../01-domain/entities/pipeline-config';
 // prints their overall/breakdown/confidence/gaps side by side. This is the
 // "compare against a golden dataset" step the user asked for after
 // EducationMatch/generateAnalysisV2 shipped.
+//
+// Calls generateAnalysisV1 directly (not via generateAnalysis()) since that
+// wrapper was repointed to V2 in the 2026-07-18 migration (ADR-004) - this
+// script's whole job is comparing the two engines, so it needs both by name,
+// not whichever one is currently the default.
 //
 // The goal here is conceptual coverage, not a target count (user's explicit
 // reframe: "quiero cubrir todos los comportamientos relevantes" over
@@ -68,7 +73,7 @@ function run() {
     const resumeText = readFixture(pair.resumeFile);
     const jobText = readFixture(pair.jobFile);
 
-    const v1 = generateAnalysis({ resume: resumeText, job: jobText, pipelineConfig }).analysis;
+    const v1 = generateAnalysisV1(parseResumeTextV1(resumeText), parseJobTextV1(jobText), pipelineConfig);
     const v2 = generateAnalysisV2({ resumeText, jobText, pipelineConfig }).analysis;
 
     console.log(`## [${pair.coverage}] ${pair.label}`);

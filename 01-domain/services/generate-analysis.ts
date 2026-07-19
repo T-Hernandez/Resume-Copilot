@@ -1,74 +1,50 @@
 import { Analysis } from '../entities/analysis';
-import { Job } from '../entities/job';
 import { PipelineConfig } from '../entities/pipeline-config';
-import { Resume } from '../entities/resume';
-import { generateAnalysisV1 } from './generate-analysis-v1';
-import { buildDocumentPipeline } from './document-processing-pipeline';
-
-export interface AnalysisGenerator {
-  generate(resume: Resume, job: Job, pipelineConfig: PipelineConfig): Promise<Analysis> | Analysis;
-}
+import { generateAnalysisV2 } from './generate-analysis-v2';
+import { ParsedResumeDocument } from './parse-resume-document';
+import { ParsedJobDocument } from './parse-job-document';
 
 export interface GenerateAnalysisInput {
-  resume: Resume | string;
-  job: Job | string;
+  resume: string;
+  job: string;
   pipelineConfig: PipelineConfig;
 }
 
 export interface GenerateAnalysisPipeline {
-  parsedResume: Resume;
-  parsedJob: Job;
+  parsedResumeDocument: ParsedResumeDocument;
+  parsedJobDocument: ParsedJobDocument;
   analysis: Analysis;
 }
 
+// Public entry point for the domain's GenerateAnalysis verb
+// (Ubiquitous-Language.md). As of the migration completed 2026-07-18 (ADR-004),
+// this calls generateAnalysisV2 - Parser -> Evidence -> Match<T> -> Score
+// Engine is now what ships by default.
+//
+// generateAnalysisV1 is NOT deleted - it stays @deprecated and directly
+// importable (generate-analysis-v1.ts) specifically so
+// specifications/reports/compare-v1-v2.ts can keep diffing it against V2 on
+// real fixtures, per the user's own migration plan: "mantener V1 un tiempo
+// detrás de una bandera o como referencia, mientras el benchmark sigue
+// ejecutando ambos." Nothing calls generateAnalysisV1 through this wrapper
+// anymore - callers that want V1 specifically must import it directly.
+//
+// Input is now string-only (previously accepted Resume|string / Job|string):
+// confirmed via grep before this change that this wrapper was only ever
+// called with raw text (specifications/runner/executor.ts,
+// specifications/reports/compare-v1-v2.ts) - the object-input branch was
+// unused flexibility for a type (Resume/Job) that is itself transitional
+// per ADR-004, so it was not worth preserving.
 export function generateAnalysis(input: GenerateAnalysisInput): GenerateAnalysisPipeline {
-  const resumeInput = typeof input.resume === 'string' ? parseResumeText(input.resume) : {
-    ...input.resume,
-    skills: (input.resume.skills || []).map((skill, index) => ({
-      id: `skill-${index + 1}`,
-      raw: typeof skill === 'string' ? skill : skill.raw,
-      canonical: typeof skill === 'string' ? undefined : skill.canonical,
-      confidence: typeof skill === 'string' ? 100 : skill.confidence ?? 100
-    }))
-  };
-
-  const jobInput = typeof input.job === 'string' ? parseJobText(input.job) : {
-    ...input.job,
-    requiredSkills: input.job.requiredSkills || []
-  };
-
-  const analysis = generateAnalysisV1(resumeInput, jobInput, input.pipelineConfig);
+  const result = generateAnalysisV2({
+    resumeText: input.resume,
+    jobText: input.job,
+    pipelineConfig: input.pipelineConfig
+  });
 
   return {
-    parsedResume: resumeInput,
-    parsedJob: jobInput,
-    analysis
-  };
-}
-
-function parseResumeText(text: string): Resume {
-  const pipeline = buildDocumentPipeline(text);
-  const skills = pipeline.structuredResume.skills;
-  const experience = pipeline.structuredResume.experience.length ? [{ id: 'exp-1', title: pipeline.structuredResume.experience[0].role || 'Developer', company: pipeline.structuredResume.experience[0].company || 'Sample', startDate: '2021-01-01', endDate: '2024-01-01' }] : [];
-
-  return {
-    id: 'resume-1',
-    skills: skills.map((skill, index) => ({ id: `skill-${index + 1}`, raw: skill.raw, confidence: skill.confidence || 100 })),
-    experience,
-    raw: text
-  };
-}
-
-function parseJobText(text: string): Job {
-  const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
-  const requiredSkills = lines.find(line => line.toLowerCase().startsWith('required skills:'))?.split(':')[1]?.split(/[,;]+/).map(skill => skill.trim()).filter(Boolean) || [];
-  const minExperienceYears = parseInt(lines.find(line => line.toLowerCase().startsWith('minexperienceyears:'))?.split(':')[1] || '0', 10) || 0;
-
-  return {
-    id: 'job-1',
-    title: 'Parsed Job',
-    rawText: text,
-    requiredSkills,
-    minExperienceYears
+    parsedResumeDocument: result.parsedResumeDocument,
+    parsedJobDocument: result.parsedJobDocument,
+    analysis: result.analysis
   };
 }

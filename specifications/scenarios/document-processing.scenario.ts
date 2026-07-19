@@ -15,12 +15,13 @@ Scenario({
   expect: {
     'parsedDocument.metadata.sectionCount': '>= 2',
     'parsedDocument.metadata.skillCount': '>= 3',
-    'parsedResume.skills.length': '>= 3',
+    'parsedResumeDocument.skills.length': '>= 3',
     overall: 'greaterThan:60'
   },
   rationale: [
     'The document processor should detect section boundaries from headings.',
     'Skills should be extracted from the structured sections instead of relying on a single line.',
-    'The analysis should remain meaningful when the document is parsed through the new pipeline.'
+    'The analysis should remain meaningful when the document is parsed through the new pipeline.',
+    'parsedResumeDocument (not the legacy parsedResume/Resume DTO) - generateAnalysis() is V2-backed as of the 2026-07-18 migration, see public-api.scenario.ts.'
   ]
 });

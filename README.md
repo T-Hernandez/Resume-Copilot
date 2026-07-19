@@ -17,8 +17,10 @@ What "done" means concretely:
 - Scoring (`calculateSubscore`, `calculateOverallScore`) is config-driven off `PipelineConfig` weights, with zero hardcoded categories or magic constants.
 - `confidence` semantics are decided and documented (`01-domain/services/generate-analysis-v2.ts`): the real average of every produced `Match<T>`'s confidence, or `undefined` - not `0` - when nothing was required at all.
 - Validated against 22 real resume/job pairs spanning strong/partial/total mismatch, junior↔senior, incomplete/short/long CVs, alias resolution, symbol-named technologies, overlapping experience, ambiguous dates, and jobs with missing requirement fields (`npm run compare`, `specifications/reports/compare-v1-v2.ts`).
-- 30/30 behavioral specs pass (`npm run specs`); `tsc --noEmit` is clean.
+- 33/33 behavioral specs pass (`npm run specs`); `tsc --noEmit` is clean.
 
-Two implementations of `GenerateAnalysis` currently coexist: `generateAnalysisV1` (still the default, `@deprecated` per ADR-004, kept only so the benchmark can keep diffing it against V2) and `generateAnalysisV2` (the model this freeze describes). Retiring V1 and changing the public entry point is an explicit, separate decision, not yet made.
+**Migration complete (2026-07-18):** `generateAnalysis()` - the public entry point - now runs `generateAnalysisV2` by default. `generateAnalysisV1` is not deleted: it stays `@deprecated`, directly importable, and is exactly what `npm run compare` diffs V2 against on every fixture. Retiring it fully (deleting the code) is a later, separate decision - this migration only changed which engine is the default.
 
-New work past this point (more `Match<T>` categories, LLM explanation, product/UI) is out of scope for the engine freeze - see project roadmap.
+Fase 2 (deterministic explanation facts) has started: `buildWeaknesses`/`buildStrengths` populate `Analysis.weaknesses`/`strengths` across skills, experience, and education; `buildRecommendationInput` packages those facts into the only shape a future recommendation generator may read. The `RecommendationGenerator` port exists (`01-domain/services/recommendation-generator.ts`); no implementation exists yet - that requires a new infrastructure layer, an LLM SDK dependency, and API credentials, none of which exist in this repo, per `01-domain/README.md`'s own no-external-deps rule.
+
+New work past the engine freeze (more `Match<T>` categories beyond skill/experience/education, the LLM adapter, product/UI) continues in project roadmap.

@@ -4,6 +4,42 @@ import { NormalizedResume, Resume } from '../entities/resume';
 import { PipelineConfig } from '../entities/pipeline-config';
 import { DefaultSkillNormalizer } from './skill-normalizer';
 import { matchResumeToJob } from '../matching/match-resume-to-job';
+import { buildDocumentPipeline } from './document-processing-pipeline';
+
+/**
+ * @deprecated V1-only. Naive text -> Resume/Job conversion, kept solely so
+ * callers that still want to run generateAnalysisV1 directly (the benchmark
+ * comparator) can build its inputs from raw text the same way the old
+ * generateAnalysis() wrapper used to, before that wrapper was repointed to
+ * generateAnalysisV2 per ADR-004.
+ */
+export function parseResumeTextV1(text: string): Resume {
+  const pipeline = buildDocumentPipeline(text);
+  const skills = pipeline.structuredResume.skills;
+  const experience = pipeline.structuredResume.experience.length ? [{ id: 'exp-1', title: pipeline.structuredResume.experience[0].role || 'Developer', company: pipeline.structuredResume.experience[0].company || 'Sample', startDate: '2021-01-01', endDate: '2024-01-01' }] : [];
+
+  return {
+    id: 'resume-1',
+    skills: skills.map((skill, index) => ({ id: `skill-${index + 1}`, raw: skill.raw, confidence: skill.confidence || 100 })),
+    experience,
+    raw: text
+  };
+}
+
+/** @deprecated V1-only, see parseResumeTextV1. */
+export function parseJobTextV1(text: string): Job {
+  const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  const requiredSkills = lines.find(line => line.toLowerCase().startsWith('required skills:'))?.split(':')[1]?.split(/[,;]+/).map(skill => skill.trim()).filter(Boolean) || [];
+  const minExperienceYears = parseInt(lines.find(line => line.toLowerCase().startsWith('minexperienceyears:'))?.split(':')[1] || '0', 10) || 0;
+
+  return {
+    id: 'job-1',
+    title: 'Parsed Job',
+    rawText: text,
+    requiredSkills,
+    minExperienceYears
+  };
+}
 
 /**
  * @deprecated Superseded by generateAnalysisV2 (generate-analysis-v2.ts) per

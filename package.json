@@ -1,7 +1,8 @@
 {
   "scripts": {
     "specs": "node --require ts-node/register/transpile-only specifications/runner/run-all.ts",
-    "compare": "node --require ts-node/register/transpile-only specifications/reports/compare-v1-v2.ts"
+    "compare": "node --require ts-node/register/transpile-only specifications/reports/compare-v1-v2.ts",
+    "analyze": "node --require ts-node/register/transpile-only cli/analyze.ts"
   },
   "devDependencies": {
     "ts-node": "^10.9.2",

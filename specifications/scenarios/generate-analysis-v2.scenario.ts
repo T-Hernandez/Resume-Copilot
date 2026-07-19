@@ -36,7 +36,11 @@ Scenario({
     // not V1's fixed 85-whenever-there-are-no-warnings.
     'analysisV2.confidence': '== 94',
     'analysisV2.gaps.length': '== 0',
-    'analysisV2.strengths.length': '== 2',
+    // 2 skills matched (React, TypeScript) + 1 experience strength + 1
+    // education strength = 4. Was `== 2` before buildStrengths extended
+    // strengths beyond skills-only, mirroring buildWeaknesses - see
+    // build-strengths.scenario.ts for the dedicated coverage.
+    'analysisV2.strengths.length': '== 4',
     'analysisV2.matches.length': '== 0'
   },
   rationale: [
@@ -53,12 +57,12 @@ Scenario({
     // V1's breakdown always includes these three at a flat 100 - the
     // pipeline never actually evaluates keywords, certifications, or
     // languages, it just assumes a perfect score for them.
-    'breakdown.keywords': '== 100',
-    'breakdown.certifications': '== 100',
-    'breakdown.languages': '== 100',
+    'analysisV1.breakdown.keywords': '== 100',
+    'analysisV1.breakdown.certifications': '== 100',
+    'analysisV1.breakdown.languages': '== 100',
     // V1's confidence is a fixed 85 whenever there are no warnings,
     // regardless of how strong or weak the underlying evidence actually was.
-    confidence: '== 85',
+    'analysisV1.confidence': '== 85',
     // V2, run on the exact same resume/job text, reports only the
     // categories it evaluated and a confidence computed from real Match<T>
     // confidences (94, not 85) - see the scenario above for the exact
@@ -67,7 +71,8 @@ Scenario({
     'analysisV2.confidence': '== 94'
   },
   rationale: [
-    'This is the comparison the two engines exist to enable: same resumeText/jobText through generateAnalysisV1 (pipeline.analysis, exposed at the top level) and generateAnalysisV2 (analysisV2), so the difference in what gets fabricated vs. actually evaluated is visible in one spec rather than asserted separately in isolation.',
-    'V1 is untouched and still what ships - this scenario exists to build confidence in V2 before that decision is made, not to assert V2 is "better" on every axis.'
+    'This is the comparison the two engines exist to enable: same resumeText/jobText through generateAnalysisV1 (analysisV1, called directly) and generateAnalysisV2 (analysisV2), so the difference in what gets fabricated vs. actually evaluated is visible in one spec rather than asserted separately in isolation.',
+    'Updated 2026-07-18: generateAnalysis() (and so the top-level spread fields) is now V2-backed per ADR-004 - V1-specific assertions moved from bare top-level paths to analysisV1.* so this comparison keeps meaning what it always meant, instead of silently comparing V2 against itself.',
+    'V1 is not deleted, only no longer the default - kept explicitly so this comparison, and specifications/reports/compare-v1-v2.ts, can keep running both.'
   ]
 });

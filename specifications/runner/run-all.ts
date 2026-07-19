@@ -15,6 +15,8 @@ import './../scenarios/match-experience.scenario';
 import './../scenarios/match-education.scenario';
 import './../scenarios/generate-analysis-v2.scenario';
 import './../scenarios/build-weaknesses.scenario';
+import './../scenarios/build-strengths.scenario';
+import './../scenarios/build-recommendation-input.scenario';
 import { runAll } from './runner';
 
 runAll().catch(err => {

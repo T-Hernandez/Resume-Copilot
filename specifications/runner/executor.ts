@@ -13,6 +13,8 @@ import { detectDegreeLevel } from '../../01-domain/matching/degree-level';
 import { calculateSubscore } from '../../01-domain/services/calculate-subscore';
 import { calculateOverallScore } from '../../01-domain/services/calculate-overall-score';
 import { generateAnalysisV2 } from '../../01-domain/services/generate-analysis-v2';
+import { generateAnalysisV1, parseResumeTextV1, parseJobTextV1 } from '../../01-domain/services/generate-analysis-v1';
+import { buildRecommendationInput } from '../../01-domain/services/build-recommendation-input';
 import { PipelineConfig } from '../../01-domain/entities/pipeline-config';
 
 type Given = { resumePath?: string; jobPath?: string; resumeText?: string; jobText?: string; pipelineConfig?: any };
@@ -90,6 +92,11 @@ export async function runScenario(given: Given) {
     jobText,
     pipelineConfig: scoreEnginePipelineConfig
   });
+  // Deterministic "context" step for Fase 2: packages Analysis's own facts
+  // into the shape a future RecommendationGenerator (LLM, infra layer) is
+  // allowed to read - exposed here only so specs can verify the packaging
+  // itself, independent of any LLM wiring (which does not exist yet).
+  const recommendationInput = buildRecommendationInput(analysisV2.analysis);
 
   const resume = parseResumeSimple(resumeText);
   const job = parseJobSimple(jobText);
@@ -113,21 +120,34 @@ export async function runScenario(given: Given) {
   }
   const overall = Math.round(weightedSum / totalWeight);
 
+  // Live default path - generateAnalysis() is V2-backed since the
+  // 2026-07-18 migration (ADR-004). Reuses scoreEnginePipelineConfig rather
+  // than rebuilding an equivalent object - V2 only ever reads
+  // algorithmVersion/weights; thresholds/partialMatchScore were V1-only
+  // metadata passthrough that never affected scoring (neither field is
+  // referenced anywhere in generate-analysis-v1.ts's logic).
   const pipeline = generateAnalysis({
     resume: resumeText,
     job: jobText,
-    pipelineConfig: {
-      algorithmVersion: given.pipelineConfig?.algorithmVersion || '0.0.0',
-      weights: given.pipelineConfig?.weights || { skills: 0.4, experience: 0.25, education: 0.1, keywords: 0.15, certifications: 0.05, languages: 0.05 },
-      thresholds: given.pipelineConfig?.thresholds || {},
-      partialMatchScore: given.pipelineConfig?.partialMatchScore || 70
-    } as any
+    pipelineConfig: scoreEnginePipelineConfig
   });
+
+  // analysisV1: the raw V1 engine, called directly (generateAnalysis() no
+  // longer routes to it) so specs comparing V1's old fabricated-category/
+  // fixed-confidence behavior against V2 still have a real V1 result to
+  // point at (see generate-analysis-v2.scenario.ts's comparison scenario).
+  const analysisV1 = generateAnalysisV1(
+    parseResumeTextV1(resumeText),
+    parseJobTextV1(jobText),
+    {
+      algorithmVersion: given.pipelineConfig?.algorithmVersion || '0.0.0',
+      weights: given.pipelineConfig?.weights || { skills: 0.4, experience: 0.25, education: 0.1, keywords: 0.15, certifications: 0.05, languages: 0.05 }
+    }
+  );
 
   return {
     ...pipeline.analysis,
-    parsedResume: pipeline.parsedResume,
-    parsedJob: pipeline.parsedJob,
+    analysisV1,
     parsedDocument,
     resumeSections,
     parsedResumeDocument,
@@ -138,6 +158,7 @@ export async function runScenario(given: Given) {
     scoreEngineBreakdown,
     scoreEngineOverall,
     analysisV2: analysisV2.analysis,
+    recommendationInput,
     // Exposed only so specs can prove analysisV2.breakdown contains exactly
     // the categories a Match<T> producer actually covered - no more, no
     // less - without needing an "expected undefined" check the runner

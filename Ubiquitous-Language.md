@@ -20,6 +20,7 @@ Propósito: definir los sustantivos y verbos oficiales del dominio para evitar a
 - Strength
 - Weakness
 - Recommendation
+- RecommendationInput *(añadido Fase 2, 2026-07-18; empaquetado determinista de overall/breakdown/confidence/strengths/weaknesses/gaps - lo único que un RecommendationGenerator puede leer, nunca texto crudo del CV/oferta)*
 - Evidence
 - Score
 - Confidence
@@ -40,8 +41,13 @@ Propósito: definir los sustantivos y verbos oficiales del dominio para evitar a
 - CalculateOverallScore(breakdown, pipelineConfig) -> number
 - GenerateAnalysis(resume, job, pipelineConfig) -> Analysis *(hoy implementado por `generateAnalysisV1`; `generateAnalysisV2` es la implementación basada en Match<T> descrita en ADR-004, validada en paralelo vía `npm run compare` - el verbo de dominio no cambia, la implementación detrás sí es una decisión pendiente, ver roadmap)*
 
+### Dominio (Core), continuado - Fase 2 (2026-07-18)
+- BuildWeaknesses({skillMatches, experienceMatch, educationMatch}) -> Weakness[] *(hechos deterministas, no prosa - primera pieza de Fase 2)*
+- BuildStrengths({skillMatches, experienceMatch, educationMatch}) -> Strength[] *(mismo principio, invertido)*
+- BuildRecommendationInput(analysis) -> RecommendationInput *(empaqueta hechos ya calculados; no computa nada nuevo, no decide nada)*
+
 ### Aplicación / Presentación (externo a dominio)
-- GenerateRecommendations(analysis) -> Recommendation[]
+- GenerateRecommendations(recommendationInput) -> Recommendation[] *(actualizado: recibe RecommendationInput, no Analysis completo, para que sea estructuralmente imposible que lea texto crudo del CV/oferta. Implementada vía el puerto RecommendationGenerator en 01-domain/services/recommendation-generator.ts - la implementación real (LLM) pertenece a una capa de infrastructure que todavía no existe en este repo. Este es el primer punto donde una IA participa en el pipeline, y por diseño solo puede frasear/priorizar los hechos que ya recibió, nunca inventar uno nuevo, por ADR-001.)*
 - PresentAnalysis(analysis) -> PresentationModel
 - ExportAnalysis(analysis, format) -> file
 - VersionAlgorithm(versionString) (se registra en metadata)
