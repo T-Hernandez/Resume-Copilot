@@ -1,5 +1,8 @@
 # Resume Copilot
 
+[![CI](https://github.com/T-Hernandez/Resume-Copilot/actions/workflows/ci.yml/badge.svg)](https://github.com/T-Hernandez/Resume-Copilot/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A deterministic ATS-style resume/job matching engine, with an explainable score, a REST API, and a CLI - built around one rule: **the backend decides the score, an LLM only ever explains it.**
 
 ```
@@ -30,28 +33,39 @@ Most "AI resume matchers" ask an LLM to invent a score. That number isn't reprod
 
 ## Architecture
 
+```mermaid
+flowchart TB
+    subgraph consumers["Consumers (no domain logic)"]
+        CLI["cli/<br/>analyze.ts, compare-resumes.ts"]
+        API["api/<br/>Express: /analyze, /compare"]
+        Specs["specifications/<br/>test harness"]
+    end
+
+    subgraph domain["01-domain/  (zero external dependencies)"]
+        direction LR
+        Parser --> Evidence --> Match["Match&lt;T&gt;"] --> Score["Score Engine"] --> Analysis
+    end
+
+    subgraph infra["infrastructure/  (the only place SDKs are allowed)"]
+        PDF["pdf-parse / mammoth"]
+        Claude["Claude adapter<br/>(implements RecommendationGenerator)"]
+    end
+
+    CLI --> domain
+    API --> domain
+    Specs --> domain
+    CLI --> infra
+    API --> infra
 ```
-01-domain/        Parser -> Evidence -> Match<T> -> Score Engine -> Analysis.
-                   Zero external dependencies. Pure, deterministic, unit-tested.
 
-infrastructure/    The only place external SDKs are allowed: PDF/DOCX text
-                   extraction (pdf-parse, mammoth), the Claude adapter
-                   (@anthropic-ai/sdk) implementing the domain's
-                   RecommendationGenerator port.
-
-config/            Shared defaults (e.g. DEFAULT_PIPELINE_CONFIG) used by
-                   every consumer below, so weights live in exactly one place.
-
-cli/               First consumer of the domain: reads files, calls
-                   generateAnalysis(), prints the result. No domain logic.
-
-api/               Second consumer of the domain: an Express REST API over
-                   the exact same generateAnalysis() call. No domain logic.
-
-specifications/    The test suite: a small declarative Scenario DSL for
-                   domain behavior, plus standalone spec scripts for
-                   infrastructure/API/service-layer integration checks.
-```
+| Layer | Responsibility |
+|---|---|
+| `01-domain/` | Parser → Evidence → `Match<T>` → Score Engine → `Analysis`. Pure, deterministic, unit-tested, zero external dependencies. |
+| `infrastructure/` | The only place external SDKs are allowed: PDF/DOCX extraction (`pdf-parse`, `mammoth`), the Claude adapter (`@anthropic-ai/sdk`) implementing the domain's `RecommendationGenerator` port. |
+| `config/` | Shared defaults (e.g. `DEFAULT_PIPELINE_CONFIG`) used by every consumer, so weights live in exactly one place. |
+| `cli/` | First consumer of the domain: reads files, calls `generateAnalysis()`, prints the result. |
+| `api/` | Second consumer of the domain: an Express REST API over the exact same `generateAnalysis()` call. |
+| `specifications/` | A small declarative Scenario DSL for domain behavior, plus standalone spec scripts for infrastructure/API/service-layer integration checks. |
 
 Every consumer (CLI, API, the spec harness itself) goes through the same single entry point, `generateAnalysis()` in `01-domain/services/generate-analysis.ts`. Nothing outside `01-domain` computes a score, a match, or a gap.
 
@@ -136,6 +150,18 @@ npm run compare     # diagnostic: the old V1 engine vs. the current V2 engine on
 
 The domain layer (`01-domain`) is tested through a small declarative Scenario DSL (`given` resume/job text, `expect` dot-path assertions on the resulting analysis - see `specifications/runner/`). Infrastructure (PDF/DOCX extraction against real hand-built fixture files), the API handlers, and the comparison/ranking services each have their own standalone spec scripts, all wired into the one `npm run specs` command.
 
+## Design decisions
+
+| Decision | Why |
+|---|---|
+| Scoring is deterministic, never LLM-driven | Reproducibility and explainability - the same resume/job text always produces the same `overall`. An LLM score can't promise that. See [ADR-001](ADR/ADR-001-deterministic-scoring.md). |
+| `Match<T>` separates *matched* from *confidence* | "The candidate clearly doesn't meet this requirement" and "we don't have enough data to tell" are different claims and need different signals - collapsing them into one score loses information a reader needs. |
+| `confidence` can be `undefined`, never coerced to `0` | A job with no stated requirements has nothing to be confident *about* - that's a different claim from "low confidence," so the type says so instead of picking a misleading number. |
+| LLM recommendations only ever see `RecommendationInput` (already-decided facts) | Never the raw resume/job text - structurally prevents the LLM from inventing a skill, a score, or contradicting a fact the deterministic engine already produced. |
+| Deterministic recommendations exist independently of the LLM path | So every response is useful with zero API key and zero network access - the LLM path is an opt-in enhancement, not a requirement. |
+| `RecommendationGenerator` is a port, implementations are swappable | `ClaudeRecommendationGenerator` (infrastructure, needs an SDK) and the deterministic rule-based generator (domain, needs nothing) both implement the same interface - switching providers doesn't touch a single consumer. |
+| `01-domain` has zero external dependencies, not even Node built-ins | Forces every non-trivial decision (id generation included - see `deterministic-id.ts`) to be explicit, portable, and trivially unit-testable without mocks. |
+
 ## Design docs
 
 - [ADR-001](ADR/ADR-001-deterministic-scoring.md) - why scoring is deterministic, never LLM-driven.
@@ -145,4 +171,10 @@ The domain layer (`01-domain`) is tested through a small declarative Scenario DS
 
 ## Project status
 
-Engine, CLI, API, PDF/DOCX ingestion, multi-candidate comparison, visual score explanation, and deterministic recommendations are built and tested. The Claude-based recommendation enhancement is opt-in and needs your own API key. Not built yet: persistence/history, a web frontend, and further `Match<T>` categories (languages, certifications) beyond skills/experience/education.
+**Feature-complete for v1.** Engine, CLI, API, PDF/DOCX ingestion, multi-candidate comparison, visual score explanation, and deterministic recommendations are built and tested. Docker, CI, and an MIT license are in place. The Claude-based recommendation enhancement is opt-in and needs your own API key.
+
+Deliberately not built (out of scope for this version, not overlooked): persistence/history, authentication, a web frontend/dashboard, and further `Match<T>` categories (languages, certifications) beyond skills/experience/education.
+
+## License
+
+[MIT](LICENSE)
