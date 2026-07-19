@@ -1,7 +1,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { generateAnalysis } from '../01-domain/services/generate-analysis';
+import { buildRecommendationInput } from '../01-domain/services/build-recommendation-input';
 import { PipelineConfig } from '../01-domain/entities/pipeline-config';
+import { ClaudeRecommendationGenerator } from '../infrastructure/claude-recommendation-generator';
+import { extractTextFromPdf, extractTextFromDocx } from '../infrastructure/extract-text';
+import { parseArguments } from './arguments';
+import { printAnalysis, printRecommendations } from './output';
 
 // First public interface consuming the domain (Ubiquitous-Language.md's
 // "Aplicación / Presentación (externo a dominio)" layer) - not 01-domain
@@ -13,58 +18,38 @@ const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   weights: { skills: 0.4, experience: 0.25, education: 0.1, keywords: 0.15 }
 };
 
-function readFile(filePath: string): string {
+// Extracts to plain text regardless of source format - PDF and DOCX both go
+// through infrastructure/extract-text.ts before this function returns, so
+// generateAnalysis() (and everything under 01-domain) never has to know a
+// PDF was ever involved. .txt stays a plain read - no extraction needed.
+async function readResumeOrJobText(filePath: string): Promise<string> {
   const resolved = path.resolve(process.cwd(), filePath);
   if (!fs.existsSync(resolved)) {
     console.error(`File not found: ${filePath}`);
     process.exit(1);
   }
+
+  const extension = path.extname(resolved).toLowerCase();
+  if (extension === '.pdf') {
+    return extractTextFromPdf(fs.readFileSync(resolved));
+  }
+  if (extension === '.docx') {
+    return extractTextFromDocx(fs.readFileSync(resolved));
+  }
   return fs.readFileSync(resolved, 'utf8');
 }
 
-function formatConfidence(confidence: number | undefined): string {
-  // confidence is `undefined` (not 0) when nothing was actually evaluated -
-  // see generate-analysis-v2.ts. The CLI reflects that distinction rather
-  // than collapsing it back into a misleading "0%".
-  return typeof confidence === 'number' ? `${confidence}%` : 'n/a (nothing was evaluated)';
-}
-
-// UX-only caveat, not a change to the number itself: when confidence is
-// undefined, `overall` is still a correct answer (calculateSubscore([])
-// deliberately scores an empty category 100 - "nothing required" is not
-// "candidate failed", and that rule is real, tested domain logic that
-// should not be touched here). What's misleading is showing "100%" with no
-// context right next to "confidence: n/a" - a reader sees a strong match,
-// not an empty checklist. This adds the missing context without hiding or
-// altering the real, honestly-computed value.
-function formatOverall(overall: number, confidence: number | undefined): string {
-  if (confidence === undefined) {
-    return `${overall}% (no requirements were stated for this job - this reflects an empty checklist, not a strong match)`;
-  }
-  return `${overall}%`;
-}
-
-function printSection(title: string, items: string[] | undefined): void {
-  console.log(`\n${title}:`);
-  if (!items || !items.length) {
-    console.log('  (none)');
-    return;
-  }
-  for (const item of items) {
-    console.log(`  - ${item}`);
-  }
-}
-
-function main(): void {
-  const [, , resumePath, jobPath] = process.argv;
-
-  if (!resumePath || !jobPath) {
-    console.error('Usage: npm run analyze -- <resume.txt> <job.txt>');
+async function main(): Promise<void> {
+  let args;
+  try {
+    args = parseArguments(process.argv.slice(2));
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : error);
     process.exit(1);
   }
 
-  const resumeText = readFile(resumePath);
-  const jobText = readFile(jobPath);
+  const resumeText = await readResumeOrJobText(args.resumePath);
+  const jobText = await readResumeOrJobText(args.jobPath);
 
   const { analysis } = generateAnalysis({
     resume: resumeText,
@@ -72,22 +57,23 @@ function main(): void {
     pipelineConfig: DEFAULT_PIPELINE_CONFIG
   });
 
-  console.log('Resume Copilot - Analysis');
-  console.log('='.repeat(40));
-  console.log(`Overall score: ${formatOverall(analysis.overall, analysis.confidence)}`);
-  console.log(`Confidence: ${formatConfidence(analysis.confidence)}`);
+  printAnalysis(analysis);
 
-  console.log('\nBreakdown:');
-  for (const [category, score] of Object.entries(analysis.breakdown)) {
-    console.log(`  ${category}: ${score}%`);
-  }
-
-  printSection('Strengths', analysis.strengths);
-  printSection('Weaknesses', analysis.weaknesses);
-  printSection('Gaps', analysis.gaps);
-
-  if (analysis.warnings && analysis.warnings.length) {
-    printSection('Warnings', analysis.warnings);
+  // Opt-in only: the RecommendationGenerator adapter calls the Claude API,
+  // which needs credentials this CLI does not manage (ANTHROPIC_API_KEY, or
+  // an `ant auth login` profile - see .env.example). Everything above this
+  // point is the deterministic engine and requires no network access at
+  // all; --recommend is the one path that does.
+  if (args.wantsRecommendations) {
+    console.log('\nGenerating recommendations (Claude API)...');
+    try {
+      const recommendationInput = buildRecommendationInput(analysis);
+      const generator = new ClaudeRecommendationGenerator();
+      const recommendations = await generator.generate(recommendationInput);
+      printRecommendations(recommendations);
+    } catch (error) {
+      console.error('\nCould not generate recommendations:', error instanceof Error ? error.message : error);
+    }
   }
 
   console.log('');
