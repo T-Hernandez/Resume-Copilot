@@ -2,6 +2,7 @@ import { PDFParse } from 'pdf-parse';
 import * as mammoth from 'mammoth';
 import { PositionedItem, reconstructColumnAwareText, reconstructLines } from './pdf-column-layout';
 import { htmlToStructuredText } from './docx-structured-text';
+import { extractTextViaOcr } from './ocr-pdf';
 
 // Second infrastructure-layer concern, same boundary as
 // claude-recommendation-generator.ts: raw file-format extraction is not
@@ -73,11 +74,20 @@ async function tryExtractColumnAwareText(buffer: Buffer): Promise<string | undef
   }
 }
 
+// Below this length, extracted text is treated as "nothing real came out of
+// this PDF" rather than a genuinely sparse-but-real resume - a scanned page
+// has zero text objects and produces literal empty output, not just a
+// short one, so this only ever misfires on an actually-empty PDF (which OCR
+// would also find nothing in, so falling through to it is harmless either
+// way).
+const MIN_MEANINGFUL_TEXT_LENGTH = 10;
+
 export async function extractTextFromPdf(buffer: Buffer): Promise<string> {
   const columnAware = await tryExtractColumnAwareText(buffer);
   if (columnAware !== undefined) return columnAware;
 
   const parser = new PDFParse({ data: buffer });
+  let text: string;
   try {
     // pdf-parse's default pageJoiner ('\n-- page_number of total_number --')
     // is meant for human-readable multi-page debugging output, not text
@@ -87,9 +97,23 @@ export async function extractTextFromPdf(buffer: Buffer): Promise<string> {
     // as if it were real resume content. Disabled entirely: nothing
     // downstream needs a page-boundary marker.
     const result = await parser.getText({ pageJoiner: '' });
-    return result.text;
+    text = result.text;
   } finally {
     await parser.destroy();
+  }
+
+  if (text.trim().length >= MIN_MEANINGFUL_TEXT_LENGTH) return text;
+
+  // A scanned/photographed resume (no text layer at all) reaches here -
+  // see ocr-pdf.ts. Failures here (a corrupt file that also has no text,
+  // OCR dependencies unavailable, etc.) surface the original empty text
+  // rather than throwing, so a genuinely-empty-but-valid PDF still resolves
+  // to the same "empty resume" warning it always has instead of a 500.
+  try {
+    const ocrText = await extractTextViaOcr(buffer);
+    return ocrText.trim().length > 0 ? ocrText : text;
+  } catch {
+    return text;
   }
 }
 

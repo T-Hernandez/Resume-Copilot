@@ -49,7 +49,7 @@ flowchart TB
     end
 
     subgraph infra["infrastructure/  (the only place SDKs are allowed)"]
-        PDF["pdf-parse / mammoth"]
+        PDF["pdf-parse / mammoth / tesseract.js"]
         Claude["Claude adapter<br/>(implements RecommendationGenerator)"]
     end
 
@@ -63,7 +63,7 @@ flowchart TB
 | Layer | Responsibility |
 |---|---|
 | `01-domain/` | Parser → Evidence → `Match<T>` → Score Engine → `Analysis`. Pure, deterministic, unit-tested, zero external dependencies. |
-| `infrastructure/` | The only place external SDKs are allowed: PDF/DOCX extraction (`pdf-parse`, `mammoth`), the Claude adapter (`@anthropic-ai/sdk`) implementing the domain's `RecommendationGenerator` port. |
+| `infrastructure/` | The only place external SDKs are allowed: PDF/DOCX extraction (`pdf-parse`, `mammoth`), a scanned-PDF OCR fallback (`tesseract.js` + `unpdf`/`@napi-rs/canvas` for page rasterization - see below), the Claude adapter (`@anthropic-ai/sdk`) implementing the domain's `RecommendationGenerator` port. |
 | `config/` | Shared defaults (e.g. `DEFAULT_PIPELINE_CONFIG`) used by every consumer, so weights live in exactly one place. |
 | `cli/` | First consumer of the domain: reads files, calls `generateAnalysis()`, prints the result. |
 | `api/` | Second consumer of the domain: an Express REST API over the exact same `generateAnalysis()` call. |
@@ -92,7 +92,7 @@ Render builds `Dockerfile` directly - same container as `docker compose up` abov
 
 ```bash
 npm install
-npm run specs           # 0 failed / 87 total
+npm run specs           # 0 failed / 90 total
 npm run analyze -- examples/resume-sparse.txt examples/job-react-senior.txt
 npm run api              # starts the REST API on :3000
 ```
@@ -119,6 +119,8 @@ A candidate doesn't always have one specific posting to compare against. Omittin
 ## Web UI
 
 `GET /` serves `public/index.html` - a form to analyze one resume against one job (with the same bar-chart score breakdown the CLI prints, or the resume-only breakdown above if no job posting is given), and a second tab to compare multiple resumes against one job, ranked. Paste text or upload a `.txt`/`.pdf`/`.docx` file directly in the browser - it's converted client-side and sent to the exact same `POST /analyze`/`POST /analyze-resume`/`POST /compare` endpoints documented below. No separate deployment, no framework, no build step: it's static files served by the same process.
+
+A PDF with no text layer at all (a scanned or photographed page) automatically falls back to local OCR (`tesseract.js`, English + Spanish) instead of coming back empty - no API key needed, same as the rest of extraction, but slower (a few seconds instead of milliseconds) and, on a fresh container, requires network access once to download language data (cached under the OS temp dir after that).
 
 ## API
 
@@ -180,7 +182,7 @@ Runs the same `generateAnalysis()` pipeline once per candidate and ranks the res
 ## Testing
 
 ```bash
-npm run specs      # domain scenarios + infrastructure + API + service-layer + frontend specs (87 total)
+npm run specs      # domain scenarios + infrastructure + API + service-layer + frontend specs (90 total)
 npm run compare     # diagnostic: the old V1 engine vs. the current V2 engine on 22 real resume/job pairs
 ```
 
