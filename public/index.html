@@ -8,13 +8,17 @@
 </head>
 <body>
   <header>
+    <div class="lang-switch">
+      <button type="button" class="lang-button" data-lang="en">EN</button>
+      <button type="button" class="lang-button" data-lang="es">ES</button>
+    </div>
     <h1>Resume Copilot</h1>
-    <p class="tagline">Deterministic resume/job matching. The backend decides the score - an LLM only ever explains it.</p>
+    <p class="tagline" data-i18n="tagline"></p>
   </header>
 
   <nav class="tabs">
-    <button class="tab-button active" data-tab="analyze">Analyze one resume</button>
-    <button class="tab-button" data-tab="compare">Compare multiple resumes</button>
+    <button class="tab-button active" data-tab="analyze" data-i18n="tabs.analyze"></button>
+    <button class="tab-button" data-tab="compare" data-i18n="tabs.compare"></button>
   </nav>
 
   <main>
@@ -22,21 +26,23 @@
       <form id="analyze-form">
         <div class="field-pair">
           <div class="field">
-            <label for="analyze-resume-text">Resume</label>
-            <textarea id="analyze-resume-text" rows="10" placeholder="Paste resume text here..."></textarea>
-            <label class="file-label">or upload a file (.txt, .pdf, .docx)
+            <label for="analyze-resume-text" data-i18n="analyze.resumeLabel"></label>
+            <textarea id="analyze-resume-text" rows="10" data-i18n-placeholder="analyze.pasteResume"></textarea>
+            <label class="file-label">
+              <span data-i18n="analyze.uploadHint"></span>
               <input type="file" id="analyze-resume-file" accept=".txt,.pdf,.docx" />
             </label>
           </div>
           <div class="field">
-            <label for="analyze-job-text">Job posting</label>
-            <textarea id="analyze-job-text" rows="10" placeholder="Paste job posting text here..."></textarea>
-            <label class="file-label">or upload a file (.txt, .pdf, .docx)
+            <label for="analyze-job-text" data-i18n="analyze.jobLabel"></label>
+            <textarea id="analyze-job-text" rows="10" data-i18n-placeholder="analyze.pasteJob"></textarea>
+            <label class="file-label">
+              <span data-i18n="analyze.uploadHint"></span>
               <input type="file" id="analyze-job-file" accept=".txt,.pdf,.docx" />
             </label>
           </div>
         </div>
-        <button type="submit" class="primary-button">Analyze</button>
+        <button type="submit" class="primary-button" data-i18n="analyze.submit"></button>
       </form>
       <div id="analyze-status" class="status"></div>
       <div id="analyze-results"></div>
@@ -45,16 +51,17 @@
     <section id="compare-tab" class="tab-panel">
       <form id="compare-form">
         <div class="field">
-          <label for="compare-job-text">Job posting</label>
-          <textarea id="compare-job-text" rows="6" placeholder="Paste job posting text here..."></textarea>
-          <label class="file-label">or upload a file (.txt, .pdf, .docx)
+          <label for="compare-job-text" data-i18n="analyze.jobLabel"></label>
+          <textarea id="compare-job-text" rows="6" data-i18n-placeholder="analyze.pasteJob"></textarea>
+          <label class="file-label">
+            <span data-i18n="analyze.uploadHint"></span>
             <input type="file" id="compare-job-file" accept=".txt,.pdf,.docx" />
           </label>
         </div>
 
         <div id="candidate-list"></div>
-        <button type="button" id="add-candidate" class="secondary-button">+ Add another resume</button>
-        <button type="submit" class="primary-button">Compare</button>
+        <button type="button" id="add-candidate" class="secondary-button" data-i18n="compare.addCandidate"></button>
+        <button type="submit" class="primary-button" data-i18n="compare.submit"></button>
       </form>
       <div id="compare-status" class="status"></div>
       <div id="compare-results"></div>
@@ -64,16 +71,18 @@
   <template id="candidate-template">
     <div class="candidate">
       <div class="candidate-header">
-        <input type="text" class="candidate-id" placeholder="Candidate name or label (e.g. Alice)" />
-        <button type="button" class="remove-candidate" title="Remove">&times;</button>
+        <input type="text" class="candidate-id" data-i18n-placeholder="compare.candidatePlaceholder" />
+        <button type="button" class="remove-candidate" data-i18n-title="compare.removeCandidate">&times;</button>
       </div>
-      <textarea class="candidate-text" rows="6" placeholder="Paste resume text here..."></textarea>
-      <label class="file-label">or upload a file (.txt, .pdf, .docx)
+      <textarea class="candidate-text" rows="6" data-i18n-placeholder="analyze.pasteResume"></textarea>
+      <label class="file-label">
+        <span data-i18n="analyze.uploadHint"></span>
         <input type="file" class="candidate-file" accept=".txt,.pdf,.docx" />
       </label>
     </div>
   </template>
 
+  <script src="/i18n.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>
