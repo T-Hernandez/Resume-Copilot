@@ -174,3 +174,27 @@ Scenario({
     'A single unconnected line with no date and no bullets is a guess, not a fact - parseConfidence must say so instead of pretending certainty.'
   ]
 });
+
+Scenario({
+  name: 'A label/value-style entry (date alone on its own line, then title, then company, no connector) resolves company and title instead of reading them as bullets',
+  given: {
+    resumeText: [
+      'Taylor Rivera',
+      '',
+      'Work experience',
+      '2023 - Present',
+      'Backend Engineer',
+      'Nimbus Labs'
+    ].join('\n'),
+    jobText: ''
+  },
+  expect: {
+    'parsedResumeDocument.experience.0.company': 'Nimbus Labs',
+    'parsedResumeDocument.experience.0.title': 'Backend Engineer',
+    'parsedResumeDocument.experience.0.startDate': '2023'
+  },
+  rationale: [
+    'A timeline/label-value template (the shape Europass-style CVs commonly use) puts the date range entirely on its own line, with the role and company as separate lines AFTER it, not before - the opposite of the inline-date convention ("Frontend Developer (2021-2024)") the date-line-bounds-the-meta-content logic elsewhere in this file assumes. Previously this left metaLines empty (the date consumed its own only line) and both "Backend Engineer" and "Nimbus Labs" fell through to bullets, with parseConfidence 45 - a low-confidence non-answer despite both facts being right there in the text.',
+    'The two borrowed lines still need a company/title order, and a plain position-based default ("first line is company") would have gotten this specific pair backwards - "Backend Engineer" (title) comes before "Nimbus Labs" (company) here. The same TITLE_KEYWORDS-on-exactly-one-side signal already used to resolve the dash conventions decides the order here too, instead of guessing positionally.'
+  ]
+});

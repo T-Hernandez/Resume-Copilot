@@ -61,9 +61,19 @@ function parseCompanyAndTitle(metaLines: string[]): CompanyAndTitle {
   // No connector found - fall back to positional convention:
   // company first, title second (e.g. "Google" / "Software Engineer").
   // This is a documented assumption, not a detected fact - real resumes are
-  // genuinely ambiguous here without an "at"/"@" connector.
+  // genuinely ambiguous here without an "at"/"@" connector. Same keyword
+  // override as the dash conventions above: a label/value-style entry
+  // ("2023 - Present" / "Backend Engineer" / "Nimbus Labs", one field per
+  // line, no connector at all - see the timeline-date fallback in
+  // parseEntry) just as often puts the title line first, and a recognizable
+  // title keyword on exactly one of the two lines is real evidence, not a
+  // guess, for which one that is.
   if (metaLines.length >= 2) {
-    return { company: metaLines[0], title: metaLines[1], fromExplicitConnector: false };
+    const [first, second] = metaLines;
+    if (TITLE_KEYWORDS.test(first) && !TITLE_KEYWORDS.test(second)) {
+      return { title: first, company: second, fromExplicitConnector: false };
+    }
+    return { company: first, title: second, fromExplicitConnector: false };
   }
   if (metaLines.length === 1) {
     return { title: metaLines[0], fromExplicitConnector: false };
@@ -190,8 +200,32 @@ function parseEntry(block: string): Experience {
     metaEndIndex = Math.min(cap, 2) - 1;
   }
 
-  const metaLines = lines.slice(0, metaEndIndex + 1).filter(Boolean);
-  const bulletLines = lines.slice(metaEndIndex + 1).filter(Boolean);
+  let metaLines = lines.slice(0, metaEndIndex + 1).filter(Boolean);
+  let bulletLines = lines.slice(metaEndIndex + 1).filter(Boolean);
+
+  // A date that sits entirely on its own line (a timeline-style label -
+  // "2023 - Present" with nothing else on it, common in Europass-style and
+  // other label/value templates) leaves metaLines empty: the inline-date
+  // convention this logic is otherwise built for ("Frontend Developer
+  // (2021-2024)") assumes the meta content comes BEFORE the date, but here
+  // the real company/title lines are immediately AFTER it instead. Borrows
+  // up to 2 of those lines back into metaLines - same "stop at the first
+  // prose-looking line" rule the no-date/no-bullet fallback above already
+  // uses - but only when the very next line is not itself bulleted, since a
+  // real bullet there is a stronger, more specific signal that the
+  // description already starts immediately after the date with no meta
+  // content at all.
+  if (!metaLines.length && dateLineIndex !== -1 && bulletLines.length) {
+    const nextContentIndex = lines.findIndex((line, i) => i > metaEndIndex && line);
+    const nextLineIsBulleted = nextContentIndex !== -1 && isBulletLine[nextContentIndex];
+    if (!nextLineIsBulleted) {
+      const proseIndex = bulletLines.findIndex(looksLikeProse);
+      const cap = proseIndex === -1 ? bulletLines.length : proseIndex;
+      const borrowCount = Math.min(cap, 2);
+      metaLines = bulletLines.slice(0, borrowCount);
+      bulletLines = bulletLines.slice(borrowCount);
+    }
+  }
 
   const { company, title, fromExplicitConnector } = parseCompanyAndTitle(metaLines);
 
