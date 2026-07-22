@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Resume Copilot</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Resume Copilot</h1>
+    <p class="tagline">Deterministic resume/job matching. The backend decides the score - an LLM only ever explains it.</p>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-button active" data-tab="analyze">Analyze one resume</button>
+    <button class="tab-button" data-tab="compare">Compare multiple resumes</button>
+  </nav>
+
+  <main>
+    <section id="analyze-tab" class="tab-panel active">
+      <form id="analyze-form">
+        <div class="field-pair">
+          <div class="field">
+            <label for="analyze-resume-text">Resume</label>
+            <textarea id="analyze-resume-text" rows="10" placeholder="Paste resume text here..."></textarea>
+            <label class="file-label">or upload a file (.txt, .pdf, .docx)
+              <input type="file" id="analyze-resume-file" accept=".txt,.pdf,.docx" />
+            </label>
+          </div>
+          <div class="field">
+            <label for="analyze-job-text">Job posting</label>
+            <textarea id="analyze-job-text" rows="10" placeholder="Paste job posting text here..."></textarea>
+            <label class="file-label">or upload a file (.txt, .pdf, .docx)
+              <input type="file" id="analyze-job-file" accept=".txt,.pdf,.docx" />
+            </label>
+          </div>
+        </div>
+        <button type="submit" class="primary-button">Analyze</button>
+      </form>
+      <div id="analyze-status" class="status"></div>
+      <div id="analyze-results"></div>
+    </section>
+
+    <section id="compare-tab" class="tab-panel">
+      <form id="compare-form">
+        <div class="field">
+          <label for="compare-job-text">Job posting</label>
+          <textarea id="compare-job-text" rows="6" placeholder="Paste job posting text here..."></textarea>
+          <label class="file-label">or upload a file (.txt, .pdf, .docx)
+            <input type="file" id="compare-job-file" accept=".txt,.pdf,.docx" />
+          </label>
+        </div>
+
+        <div id="candidate-list"></div>
+        <button type="button" id="add-candidate" class="secondary-button">+ Add another resume</button>
+        <button type="submit" class="primary-button">Compare</button>
+      </form>
+      <div id="compare-status" class="status"></div>
+      <div id="compare-results"></div>
+    </section>
+  </main>
+
+  <template id="candidate-template">
+    <div class="candidate">
+      <div class="candidate-header">
+        <input type="text" class="candidate-id" placeholder="Candidate name or label (e.g. Alice)" />
+        <button type="button" class="remove-candidate" title="Remove">&times;</button>
+      </div>
+      <textarea class="candidate-text" rows="6" placeholder="Paste resume text here..."></textarea>
+      <label class="file-label">or upload a file (.txt, .pdf, .docx)
+        <input type="file" class="candidate-file" accept=".txt,.pdf,.docx" />
+      </label>
+    </div>
+  </template>
+
+  <script src="/app.js"></script>
+</body>
+</html>

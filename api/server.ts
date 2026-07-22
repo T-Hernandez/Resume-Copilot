@@ -1,3 +1,4 @@
+import * as path from 'path';
 import express, { Request, Response } from 'express';
 import { handleAnalyzeRequest, InvalidRequestError } from './analyze-handler';
 import { handleCompareRequest } from './compare-handler';
@@ -30,18 +31,25 @@ export function createServer() {
   const app = express();
   app.use(express.json({ limit: JSON_BODY_LIMIT }));
 
-  // Not domain behavior - just something for a health check (Render, or
-  // anyone else) and a browser visiting the bare URL to hit instead of
-  // Express's default "Cannot GET /".
-  app.get('/', (_req: Request, res: Response) => {
-    res.status(200).json({ name: 'Resume Copilot API', status: 'ok', endpoints: ['POST /analyze', 'POST /compare'] });
-  });
+  // Health check only - not domain behavior. Kept separate from `/` (below)
+  // since Render's healthCheckPath (render.yaml) polls this specifically
+  // and shouldn't depend on the frontend's static files being present.
   app.get('/health', (_req: Request, res: Response) => {
     res.status(200).json({ status: 'ok' });
   });
 
   app.post('/analyze', handleRoute(handleAnalyzeRequest));
   app.post('/compare', handleRoute(handleCompareRequest));
+
+  // The frontend (public/index.html + styles.css + app.js) - a thin,
+  // vanilla-JS presentation layer over the two routes above, serving GET /
+  // by default (express.static's `index` behavior). Previously `/` returned
+  // a bare JSON status blob, which is what a portfolio visitor saw when
+  // opening the deployed URL in a browser - this replaces that with an
+  // actual usable page. No build step, no new dependency: it's just static
+  // files served from the same process that already answers /analyze and
+  // /compare, so nothing about deployment (Docker, Render) needed to change.
+  app.use(express.static(path.join(__dirname, '..', 'public')));
 
   return app;
 }

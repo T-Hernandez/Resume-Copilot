@@ -3,7 +3,9 @@
 [![CI](https://github.com/T-Hernandez/Resume-Copilot/actions/workflows/ci.yml/badge.svg)](https://github.com/T-Hernandez/Resume-Copilot/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A deterministic ATS-style resume/job matching engine, with an explainable score, a REST API, and a CLI - built around one rule: **the backend decides the score, an LLM only ever explains it.**
+A deterministic ATS-style resume/job matching engine, with an explainable score, a web UI, a REST API, and a CLI - built around one rule: **the backend decides the score, an LLM only ever explains it.**
+
+🔗 **Live demo:** [resume-copilot-kwu2.onrender.com](https://resume-copilot-kwu2.onrender.com) - free tier, sleeps after ~15 min idle, first load may take ~30-50s to wake up.
 
 ```
 Resume Copilot - Analysis
@@ -65,6 +67,7 @@ flowchart TB
 | `config/` | Shared defaults (e.g. `DEFAULT_PIPELINE_CONFIG`) used by every consumer, so weights live in exactly one place. |
 | `cli/` | First consumer of the domain: reads files, calls `generateAnalysis()`, prints the result. |
 | `api/` | Second consumer of the domain: an Express REST API over the exact same `generateAnalysis()` call. |
+| `public/` | Third consumer, technically a consumer of `api/`: a static, vanilla-JS/HTML/CSS web UI (no framework, no build step) served by the same Express process at `/`. Calls `POST /analyze`/`POST /compare` via `fetch` and renders the response - no domain logic here either. |
 | `specifications/` | A small declarative Scenario DSL for domain behavior, plus standalone spec scripts for infrastructure/API/service-layer integration checks. |
 
 Every consumer (CLI, API, the spec harness itself) goes through the same single entry point, `generateAnalysis()` in `01-domain/services/generate-analysis.ts`. Nothing outside `01-domain` computes a score, a match, or a gap.
@@ -106,9 +109,13 @@ npm run compare-resumes -- <job.(txt|pdf|docx)> <resume1> <resume2> [...more]
 
 `--recommend` adds an optional AI-enhanced recommendations section (requires `ANTHROPIC_API_KEY`) on top of the deterministic recommendations, which are always printed regardless.
 
+## Web UI
+
+`GET /` serves `public/index.html` - a form to analyze one resume against one job (with the same bar-chart score breakdown the CLI prints), and a second tab to compare multiple resumes against one job, ranked. Paste text or upload a `.txt`/`.pdf`/`.docx` file directly in the browser - it's converted client-side and sent to the exact same `POST /analyze`/`POST /compare` endpoints documented below. No separate deployment, no framework, no build step: it's static files served by the same process.
+
 ## API
 
-`GET /` and `GET /health` return a static 200 for health checks / a sanity check that the service is up - no domain logic, no request body.
+`GET /health` returns a static 200 for health checks - no domain logic, no request body.
 
 ### `POST /analyze`
 
@@ -179,9 +186,9 @@ The domain layer (`01-domain`) is tested through a small declarative Scenario DS
 
 ## Project status
 
-**Feature-complete for v1.** Engine, CLI, API, PDF/DOCX ingestion, multi-candidate comparison, visual score explanation, and deterministic recommendations are built and tested. Docker, CI, and an MIT license are in place. The Claude-based recommendation enhancement is opt-in and needs your own API key.
+**Feature-complete for v1.** Engine, CLI, API, a web UI, PDF/DOCX ingestion, multi-candidate comparison, visual score explanation, and deterministic recommendations are built and tested. Docker, CI, Render deployment, and an MIT license are in place. The Claude-based recommendation enhancement is opt-in and needs your own API key.
 
-Deliberately not built (out of scope for this version, not overlooked): persistence/history, authentication, a web frontend/dashboard, and further `Match<T>` categories (languages, certifications) beyond skills/experience/education.
+Deliberately not built (out of scope for this version, not overlooked): persistence/history, authentication/multi-user, a dashboard, and further `Match<T>` categories (languages, certifications) beyond skills/experience/education.
 
 ## License
 
