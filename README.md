@@ -79,6 +79,12 @@ docker compose up
 
 Starts the API on `http://localhost:3000`. No API key, no setup - the deterministic engine (parsing, matching, scoring, the visual score explanation, and baseline recommendations) needs no credentials at all. Set `ANTHROPIC_API_KEY` in your shell (or a `.env` file, see `.env.example`) only if you also want the optional AI-enhanced recommendations.
 
+### Deploy (Render)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/T-Hernandez/Resume-Copilot)
+
+Render builds `Dockerfile` directly - same container as `docker compose up` above, no rewrite. `render.yaml` (a Render Blueprint) already declares the service, the Docker runtime, and `/health` as the health check path. `ANTHROPIC_API_KEY` is optional and prompted for at deploy time (`sync: false` in `render.yaml`), never committed. Free tier note: the service sleeps after ~15 minutes idle and the next request takes ~30-50s to wake it - fine for a portfolio link, not for anything latency-sensitive.
+
 ### Local
 
 ```bash
@@ -101,6 +107,8 @@ npm run compare-resumes -- <job.(txt|pdf|docx)> <resume1> <resume2> [...more]
 `--recommend` adds an optional AI-enhanced recommendations section (requires `ANTHROPIC_API_KEY`) on top of the deterministic recommendations, which are always printed regardless.
 
 ## API
+
+`GET /` and `GET /health` return a static 200 for health checks / a sanity check that the service is up - no domain logic, no request body.
 
 ### `POST /analyze`
 

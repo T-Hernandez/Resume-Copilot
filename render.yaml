@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: resume-copilot-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      # Optional - only needed for the /analyze `recommend: true` opt-in path
+      # (ClaudeRecommendationGenerator). Set this in the Render dashboard
+      # (Environment tab) rather than committing it - `sync: false` means
+      # Render will prompt for a value instead of expecting one in this file.
+      - key: ANTHROPIC_API_KEY
+        sync: false

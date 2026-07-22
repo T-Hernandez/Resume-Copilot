@@ -30,6 +30,16 @@ export function createServer() {
   const app = express();
   app.use(express.json({ limit: JSON_BODY_LIMIT }));
 
+  // Not domain behavior - just something for a health check (Render, or
+  // anyone else) and a browser visiting the bare URL to hit instead of
+  // Express's default "Cannot GET /".
+  app.get('/', (_req: Request, res: Response) => {
+    res.status(200).json({ name: 'Resume Copilot API', status: 'ok', endpoints: ['POST /analyze', 'POST /compare'] });
+  });
+  app.get('/health', (_req: Request, res: Response) => {
+    res.status(200).json({ status: 'ok' });
+  });
+
   app.post('/analyze', handleRoute(handleAnalyzeRequest));
   app.post('/compare', handleRoute(handleCompareRequest));
 
