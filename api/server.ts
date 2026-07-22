@@ -1,5 +1,8 @@
 import * as path from 'path';
 import express, { Request, Response } from 'express';
+import helmet from 'helmet';
+import compression from 'compression';
+import rateLimit from 'express-rate-limit';
 import { handleAnalyzeRequest, InvalidRequestError } from './analyze-handler';
 import { handleCompareRequest } from './compare-handler';
 
@@ -7,6 +10,18 @@ import { handleCompareRequest } from './compare-handler';
 // than the source bytes) - plain-text resume/job bodies are a tiny fraction
 // of that.
 const JSON_BODY_LIMIT = '10mb';
+
+// /analyze and /compare both run a full scoring pipeline (and /analyze can
+// call the paid Claude API when recommend:true) on a public, unauthenticated
+// deployment - without a limit, one client can drive unbounded compute/API
+// cost. 20 requests/minute/IP is generous for a human using the form,
+// restrictive enough to blunt scripted abuse.
+const analysisRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false
+});
 
 // Both routes below need the exact same InvalidRequestError-to-400 mapping -
 // factored out once here rather than copy-pasted a second time when
@@ -29,6 +44,10 @@ function handleRoute(handler: (body: unknown) => Promise<unknown>) {
 
 export function createServer() {
   const app = express();
+  // CSP left at helmet's default (no inline <script>/<style> in public/*,
+  // so nothing to relax); everything else is helmet's standard header set.
+  app.use(helmet());
+  app.use(compression());
   app.use(express.json({ limit: JSON_BODY_LIMIT }));
 
   // Health check only - not domain behavior. Kept separate from `/` (below)
@@ -38,8 +57,8 @@ export function createServer() {
     res.status(200).json({ status: 'ok' });
   });
 
-  app.post('/analyze', handleRoute(handleAnalyzeRequest));
-  app.post('/compare', handleRoute(handleCompareRequest));
+  app.post('/analyze', analysisRateLimit, handleRoute(handleAnalyzeRequest));
+  app.post('/compare', analysisRateLimit, handleRoute(handleCompareRequest));
 
   // The frontend (public/index.html + styles.css + app.js) - a thin,
   // vanilla-JS presentation layer over the two routes above, serving GET /

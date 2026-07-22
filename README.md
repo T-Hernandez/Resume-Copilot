@@ -117,6 +117,8 @@ npm run compare-resumes -- <job.(txt|pdf|docx)> <resume1> <resume2> [...more]
 
 `GET /health` returns a static 200 for health checks - no domain logic, no request body.
 
+`/analyze` and `/compare` are both rate-limited (20 requests/minute/IP - both run a full scoring pipeline, and `/analyze` with `recommend: true` calls the paid Claude API, so a public deployment needs an abuse ceiling). Security headers (`helmet`) and gzip (`compression`) are applied to every response.
+
 ### `POST /analyze`
 
 ```bash
@@ -146,7 +148,7 @@ curl -X POST http://localhost:3000/compare \
   }'
 ```
 
-Runs the same `generateAnalysis()` pipeline once per candidate and ranks the results (by `overall`, tiebroken by `confidence`). Response: `{ compared, algorithmVersion, generatedAt, results: [{ rank, id, analysis }] }`.
+Runs the same `generateAnalysis()` pipeline once per candidate and ranks the results (by `overall`, tiebroken by `confidence`). Response: `{ compared, algorithmVersion, generatedAt, results: [{ rank, id, analysis }] }`. Capped at 50 resumes per request.
 
 ## What "deterministic" actually buys you
 
@@ -159,11 +161,11 @@ Runs the same `generateAnalysis()` pipeline once per candidate and ranks the res
 ## Testing
 
 ```bash
-npm run specs      # domain scenarios + infrastructure + API + service-layer specs (52 total)
+npm run specs      # domain scenarios + infrastructure + API + service-layer + frontend specs (60 total)
 npm run compare     # diagnostic: the old V1 engine vs. the current V2 engine on 22 real resume/job pairs
 ```
 
-The domain layer (`01-domain`) is tested through a small declarative Scenario DSL (`given` resume/job text, `expect` dot-path assertions on the resulting analysis - see `specifications/runner/`). Infrastructure (PDF/DOCX extraction against real hand-built fixture files), the API handlers, and the comparison/ranking services each have their own standalone spec scripts, all wired into the one `npm run specs` command.
+The domain layer (`01-domain`) is tested through a small declarative Scenario DSL (`given` resume/job text, `expect` dot-path assertions on the resulting analysis - see `specifications/runner/`). Infrastructure (PDF/DOCX extraction against real hand-built fixture files), the API handlers, and the comparison/ranking services each have their own standalone spec scripts, all wired into the one `npm run specs` command. `public/*.js` is covered too (`specifications/public/frontend.spec.ts`): it loads the real `index.html` in `jsdom` with the actual `<script src>` tags executing, so tests exercise the shipped files, not a reimplementation.
 
 ## Design decisions
 

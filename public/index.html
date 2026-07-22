@@ -16,6 +16,12 @@
     <p class="tagline" data-i18n="tagline"></p>
   </header>
 
+  <ol class="how-it-works">
+    <li><span class="step-number">1</span><span data-i18n="howItWorks.step1"></span></li>
+    <li><span class="step-number">2</span><span data-i18n="howItWorks.step2"></span></li>
+    <li><span class="step-number">3</span><span data-i18n="howItWorks.step3"></span></li>
+  </ol>
+
   <nav class="tabs">
     <button class="tab-button active" data-tab="analyze" data-i18n="tabs.analyze"></button>
     <button class="tab-button" data-tab="compare" data-i18n="tabs.compare"></button>
@@ -23,6 +29,7 @@
 
   <main>
     <section id="analyze-tab" class="tab-panel active">
+      <button type="button" class="example-button" id="analyze-example" data-i18n="common.tryExample"></button>
       <form id="analyze-form">
         <div class="field-pair">
           <div class="field">
@@ -44,11 +51,12 @@
         </div>
         <button type="submit" class="primary-button" data-i18n="analyze.submit"></button>
       </form>
-      <div id="analyze-status" class="status"></div>
+      <div id="analyze-status" class="status" role="status" aria-live="polite"></div>
       <div id="analyze-results"></div>
     </section>
 
     <section id="compare-tab" class="tab-panel">
+      <button type="button" class="example-button" id="compare-example" data-i18n="common.tryExample"></button>
       <form id="compare-form">
         <div class="field">
           <label for="compare-job-text" data-i18n="analyze.jobLabel"></label>
@@ -63,7 +71,7 @@
         <button type="button" id="add-candidate" class="secondary-button" data-i18n="compare.addCandidate"></button>
         <button type="submit" class="primary-button" data-i18n="compare.submit"></button>
       </form>
-      <div id="compare-status" class="status"></div>
+      <div id="compare-status" class="status" role="status" aria-live="polite"></div>
       <div id="compare-results"></div>
     </section>
   </main>
@@ -72,7 +80,7 @@
     <div class="candidate">
       <div class="candidate-header">
         <input type="text" class="candidate-id" data-i18n-placeholder="compare.candidatePlaceholder" />
-        <button type="button" class="remove-candidate" data-i18n-title="compare.removeCandidate">&times;</button>
+        <button type="button" class="remove-candidate" data-i18n-title="compare.removeCandidate" data-i18n-aria-label="compare.removeCandidate">&times;</button>
       </div>
       <textarea class="candidate-text" rows="6" data-i18n-placeholder="analyze.pasteResume"></textarea>
       <label class="file-label">
@@ -83,6 +91,7 @@
   </template>
 
   <script src="/i18n.js"></script>
+  <script src="/sample-data.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>

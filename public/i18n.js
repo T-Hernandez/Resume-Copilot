@@ -7,7 +7,13 @@
 // bigger decision, not something to fold into a UI-chrome i18n pass.
 const translations = {
   en: {
-    tagline: "Deterministic resume/job matching. The backend decides the score - an LLM only ever explains it.",
+    tagline: "Paste a resume and a job posting to get an instant, explainable match score - no AI black box, just rules you can see.",
+    howItWorks: {
+      step1: "Paste or upload a resume and a job posting",
+      step2: "Get an instant score with a full breakdown by category",
+      step3: "See exactly what's missing and what to improve"
+    },
+    common: { tryExample: "Try with example data" },
     tabs: { analyze: "Analyze one resume", compare: "Compare multiple resumes" },
     analyze: {
       resumeLabel: "Resume",
@@ -45,7 +51,13 @@ const translations = {
     errors: { requestFailed: "Request failed ({status})" }
   },
   es: {
-    tagline: "Comparación determinística de CV y oferta laboral. El backend decide el puntaje - una IA solo lo explica.",
+    tagline: "Pega un CV y una oferta laboral para obtener un puntaje de compatibilidad instantáneo y explicable - sin caja negra de IA, solo reglas que puedes ver.",
+    howItWorks: {
+      step1: "Pega o sube un CV y una oferta laboral",
+      step2: "Obtén un puntaje instantáneo con un desglose completo por categoría",
+      step3: "Ve exactamente qué falta y qué mejorar"
+    },
+    common: { tryExample: "Probar con datos de ejemplo" },
     tabs: { analyze: "Analizar un CV", compare: "Comparar varios CVs" },
     analyze: {
       resumeLabel: "Currículum (CV)",
@@ -111,6 +123,13 @@ function translateElement(root) {
   });
   root.querySelectorAll('[data-i18n-title]').forEach(el => {
     el.title = t(el.getAttribute('data-i18n-title'));
+  });
+  // Separate from data-i18n-title: the remove-candidate button needs an
+  // aria-label because its visible content is a bare "x" glyph, which
+  // screen readers announce literally ("multiplication sign") rather than
+  // as a meaningful action name.
+  root.querySelectorAll('[data-i18n-aria-label]').forEach(el => {
+    el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria-label')));
   });
 }
 

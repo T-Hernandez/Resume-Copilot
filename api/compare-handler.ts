@@ -36,6 +36,14 @@ export function parseCompareRequestBody(body: unknown): CompareRequestBody {
   if (!Array.isArray(resumes) || resumes.length < 2) {
     throw new InvalidRequestError('resumes must be an array of at least 2 { id: string, document: RequestDocument } entries');
   }
+  // Unbounded above only by the 10mb JSON body limit otherwise - a public
+  // endpoint with no upper bound lets one request fan out into dozens of
+  // full analyses (each parsing text/PDF/DOCX and running the scoring
+  // pipeline), which is a real cost/DoS vector on a single free-tier
+  // instance. 50 comfortably covers real comparison use cases.
+  if (resumes.length > 50) {
+    throw new InvalidRequestError('resumes cannot contain more than 50 entries per request');
+  }
   if (!resumes.every(isResumeEntry)) {
     throw new InvalidRequestError('each resumes entry must be { id: string, document: { text: string } | { base64: string, format: "pdf"|"docx" } }');
   }

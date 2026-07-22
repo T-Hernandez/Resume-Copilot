@@ -182,16 +182,20 @@ const compareStatus = document.getElementById('compare-status');
 const compareResults = document.getElementById('compare-results');
 let lastCompareResult = null;
 
-function addCandidateRow() {
+function addCandidateRow(prefill) {
   const node = candidateTemplate.content.cloneNode(true);
   translateElement(node);
+  if (prefill) {
+    node.querySelector('.candidate-id').value = prefill.id;
+    node.querySelector('.candidate-text').value = prefill.text;
+  }
   node.querySelector('.remove-candidate').addEventListener('click', event => {
     event.target.closest('.candidate').remove();
   });
   candidateList.appendChild(node);
 }
 
-addCandidateButton.addEventListener('click', addCandidateRow);
+addCandidateButton.addEventListener('click', () => addCandidateRow());
 // Start with 2 candidate rows - compareResumesToJob requires at least 2.
 addCandidateRow();
 addCandidateRow();
@@ -279,4 +283,27 @@ compareForm.addEventListener('submit', async event => {
 window.addEventListener('languagechange-app', () => {
   if (lastAnalyzeResult) analyzeResults.innerHTML = renderAnalysisResult(lastAnalyzeResult);
   if (lastCompareResult) compareResults.innerHTML = renderCompareResults(lastCompareResult);
+});
+
+// --- Try with example data ---
+// The single most effective onboarding for a tool like this: one click
+// shows real output instead of asking a first-time visitor to write or dig
+// up their own resume text before they even know what the page does.
+
+document.getElementById('analyze-example').addEventListener('click', () => {
+  document.getElementById('analyze-resume-text').value = SAMPLE_DATA.analyze.resume;
+  document.getElementById('analyze-resume-file').value = '';
+  document.getElementById('analyze-job-text').value = SAMPLE_DATA.analyze.job;
+  document.getElementById('analyze-job-file').value = '';
+  analyzeStatus.textContent = '';
+  analyzeStatus.className = 'status';
+});
+
+document.getElementById('compare-example').addEventListener('click', () => {
+  document.getElementById('compare-job-text').value = SAMPLE_DATA.compare.job;
+  document.getElementById('compare-job-file').value = '';
+  candidateList.innerHTML = '';
+  SAMPLE_DATA.compare.candidates.forEach(candidate => addCandidateRow(candidate));
+  compareStatus.textContent = '';
+  compareStatus.className = 'status';
 });
