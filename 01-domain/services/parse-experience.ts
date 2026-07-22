@@ -1,5 +1,6 @@
 import { Experience } from '../entities/experience';
 import { extractDateRange } from './parse-date-range';
+import { splitEntryBlocks } from './split-entry-blocks';
 
 const BULLET_PREFIX = /^[-•*●▪◦‣]\s*/;
 
@@ -15,13 +16,6 @@ const COMPANY_DASH_TITLE = /^(.+?)\s*[—–]\s*(.+)$/;
 // both appear in real resumes. A recognizable job-title word is a real
 // signal for which side is which; not exhaustive, just the common roles.
 const TITLE_KEYWORDS = /\b(developer|engineer|manager|assistant|intern|director|analyst|designer|consultant|specialist|lead|officer|coordinator|founder|ceo|cto|cfo|coo|president|architect|scientist|researcher|technician|administrator|executive|supervisor|representative|associate|strategist|producer)\b/i;
-
-function splitEntryBlocks(sectionText: string): string[] {
-  return sectionText
-    .split(/\n\s*\n/)
-    .map(block => block.trim())
-    .filter(Boolean);
-}
 
 function stripBullet(line: string): string {
   return line.replace(BULLET_PREFIX, '').trim();
@@ -104,6 +98,16 @@ function looksLikeProse(line: string): boolean {
 // date field, and must be left alone.
 const BARE_YEAR_LINE = /^\(?(\d{4})\)?[.,;:]?$/;
 
+// The same convention as BARE_YEAR_LINE, but the year is immediately
+// followed by more content on the same line ("2025 AI & Product Developer
+// — Ameliapp") instead of sitting alone - confirmed against real
+// column-aware PDF reconstruction (see infrastructure/pdf-column-layout.ts),
+// where a timeline year and its role land on one reconstructed line. Only
+// ever checked against the block's first line - a bullet deep in the block
+// that happens to start with a year ("2020 saw record growth...") must
+// never be misread as a date field.
+const LEADING_YEAR_WITH_REMAINDER = /^\(?(\d{4})\)?[.,;:]?\s+([A-Za-z].*)$/;
+
 function parseEntry(block: string): Experience {
   const rawLinesAll = block.split('\n').map(line => line.trim()).filter(Boolean);
   if (!rawLinesAll.length) return {};
@@ -115,9 +119,19 @@ function parseEntry(block: string): Experience {
   // states when it began (especially for a current/most-recent role), the
   // mirror image of parseEducationSection's bare graduation year, which is
   // read as an end date instead.
+  let bareYearStart: string | undefined;
+  let rawLines = rawLinesAll;
   const bareYearIndex = rawLinesAll.findIndex(line => BARE_YEAR_LINE.test(line));
-  const bareYearStart = bareYearIndex === -1 ? undefined : rawLinesAll[bareYearIndex].replace(/[().,;:]/g, '');
-  const rawLines = bareYearIndex === -1 ? rawLinesAll : rawLinesAll.filter((_, i) => i !== bareYearIndex);
+  if (bareYearIndex !== -1) {
+    bareYearStart = rawLinesAll[bareYearIndex].replace(/[().,;:]/g, '');
+    rawLines = rawLinesAll.filter((_, i) => i !== bareYearIndex);
+  } else {
+    const leadingMatch = rawLinesAll[0].match(LEADING_YEAR_WITH_REMAINDER);
+    if (leadingMatch) {
+      bareYearStart = leadingMatch[1];
+      rawLines = [leadingMatch[2], ...rawLinesAll.slice(1)];
+    }
+  }
   if (!rawLines.length) return {};
 
   // A bullet-prefixed line is a strong "this is body content, not meta"

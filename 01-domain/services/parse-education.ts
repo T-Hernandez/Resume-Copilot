@@ -1,14 +1,17 @@
 import { Education } from '../entities/education';
 import { extractDateRange } from './parse-date-range';
+import { splitEntryBlocks } from './split-entry-blocks';
 
 const INSTITUTION_KEYWORDS = /\b(university|college|institute|school|polytechnic)\b/i;
 
-function splitEntryBlocks(sectionText: string): string[] {
-  return sectionText
-    .split(/\n\s*\n/)
-    .map(block => block.trim())
-    .filter(Boolean);
-}
+// A leading year immediately followed by more content on the same line
+// ("2022 Systems Technician") - the same graduation-year convention as the
+// bare "2020" case below, just not alone on its own line. Confirmed against
+// real column-aware PDF reconstruction (see
+// infrastructure/pdf-column-layout.ts), where a timeline year and its
+// institution/degree land on one reconstructed line. Only ever checked
+// against the entry's first line, where a real meta line always is.
+const LEADING_YEAR_WITH_REMAINDER = /^\(?(\d{4})\)?[.,;:]?\s+([A-Za-z].*)$/;
 
 interface InstitutionAndDegree {
   institution?: string;
@@ -90,6 +93,12 @@ function parseEntry(block: string): Education {
     if (yearIndex !== -1) {
       endDate = working[yearIndex].trim();
       working[yearIndex] = '';
+    } else if (working.length) {
+      const leadingMatch = working[0].match(LEADING_YEAR_WITH_REMAINDER);
+      if (leadingMatch) {
+        endDate = leadingMatch[1];
+        working[0] = leadingMatch[2];
+      }
     }
   }
 

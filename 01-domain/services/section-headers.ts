@@ -83,6 +83,17 @@ export interface HeaderScoreContext {
   // be once we're already past the header block.
   inHeaderBlock?: boolean;
   blankLineBefore?: boolean;
+  // True while an experience/education section is still open. A short
+  // capitalized line there is normally the *next entry's* company/
+  // institution name ("Google", "Acme Corp"), not a new section - but a
+  // two-column PDF's sidebar (see infrastructure/pdf-column-layout.ts) can
+  // place its own header ("CONTACT") directly after a main column's last
+  // experience/education entry, with nothing else between them. Company and
+  // institution names are, in practice, essentially never written in ALL
+  // CAPS - so a blank-line-preceded, all-caps, short line is treated as a
+  // strong enough signal to still break through even here, while an
+  // ordinary Title Case line ("Acme Corp") stays read as the next entry.
+  insideMultiEntrySection?: boolean;
 }
 
 // Deliberately excludes bare "work"/"lead" - too likely to be part of a
@@ -142,7 +153,19 @@ export function scoreSectionHeader(line: string): number {
 // enough - real unfamiliar headers ("Volunteer Work") tend to also carry a
 // blank line before them.
 export function looksLikeSectionHeader(line: string, context: HeaderScoreContext = {}): boolean {
-  if (line.trim().length > 60) return false;
+  const trimmed = line.trim();
+  if (trimmed.length > 60) return false;
+
+  if (context.insideMultiEntrySection) {
+    if (!context.blankLineBefore) return false;
+    const colonIndex = trimmed.indexOf(':');
+    const candidate = (colonIndex === -1 ? trimmed : trimmed.slice(0, colonIndex)).trim();
+    const words = candidate.split(/\s+/).filter(Boolean);
+    const letters = candidate.replace(/[^a-zA-Z]/g, '');
+    const isAllCaps = letters.length > 1 && letters === letters.toUpperCase();
+    return isAllCaps && words.length <= 3;
+  }
+
   let score = scoreSectionHeader(line);
   if (context.blankLineBefore) score += 1;
   const threshold = context.inHeaderBlock ? 5 : 3;

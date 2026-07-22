@@ -73,8 +73,11 @@ export function parseResumeSections(text: string): ResumeSections {
     // -separated entries (one per job/degree). A short capitalized line
     // right after a blank line is the NORMAL shape of the next entry's
     // company/institution name there ("Google", "State University") - not
-    // a signal of a new top-level section. The unknown-header heuristic is
-    // only meaningful for sections that aren't expected to repeat like that.
+    // a signal of a new top-level section. Passed to looksLikeSectionHeader
+    // as context (not an outright skip) - a two-column PDF's sidebar header
+    // can still occasionally follow directly after an experience/education
+    // entry with nothing else between them, and needs a way through; see
+    // that function's own reasoning.
     const insideMultiEntrySection = cursor === 'experience' || cursor === 'education';
     // Skills commonly group into sub-categories ("Frontend:", "Backend:") -
     // parseSkillsSection reads those itself. A colon is what distinguishes
@@ -83,9 +86,8 @@ export function parseResumeSections(text: string): ResumeSections {
     const isSkillsCategoryLabel = cursor === 'skills' && line.includes(':');
     const blankLineBefore = i === 0 || !lines[i - 1].trim();
     if (
-      !insideMultiEntrySection &&
       !isSkillsCategoryLabel &&
-      looksLikeSectionHeader(line, { inHeaderBlock: cursor === 'header', blankLineBefore })
+      looksLikeSectionHeader(line, { inHeaderBlock: cursor === 'header', blankLineBefore, insideMultiEntrySection })
     ) {
       cursor = 'other';
       sawAnySection = true;

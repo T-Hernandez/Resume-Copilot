@@ -39,6 +39,14 @@ async function run(): Promise<void> {
     }
   });
 
+  await check('extractTextFromPdf does not leak pdf-parse\'s page-boundary marker into the text', async () => {
+    const buffer = fs.readFileSync(PDF_FIXTURE);
+    const text = await extractTextFromPdf(buffer);
+    if (/--\s*\d+\s+of\s+\d+\s*--/.test(text)) {
+      throw new Error(`expected no "-- N of M --" page-joiner artifact in extracted text, got: ${JSON.stringify(text)}`);
+    }
+  });
+
   await check('extractTextFromDocx reads real DOCX bytes and finds known content', async () => {
     const buffer = fs.readFileSync(DOCX_FIXTURE);
     const text = await extractTextFromDocx(buffer);
@@ -47,7 +55,7 @@ async function run(): Promise<void> {
     }
   });
 
-  console.log(`\nDone. ${failed} failed / 2 total.`);
+  console.log(`\nDone. ${failed} failed / 3 total.`);
   if (failed > 0) process.exit(2);
 }
 
