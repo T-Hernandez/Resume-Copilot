@@ -71,6 +71,90 @@ Scenario({
 });
 
 Scenario({
+  name: 'A bare year on its own line ("2025") is read as an experience entry\'s start date, in front of or behind the role',
+  given: {
+    resumeText: [
+      'Andres Hernandez',
+      '',
+      'Experience',
+      '2025',
+      'Ameliapp',
+      'AI & Product Developer',
+      '- Building a React-based application',
+      '',
+      'Kiggu',
+      'Cybersecurity Reporting Assistant',
+      '2024',
+      '- One month of work experience'
+    ].join('\n'),
+    jobText: ''
+  },
+  expect: {
+    'parsedResumeDocument.experience.length': '== 2',
+    'parsedResumeDocument.experience.0.company': 'Ameliapp',
+    'parsedResumeDocument.experience.0.title': 'AI & Product Developer',
+    'parsedResumeDocument.experience.0.startDate': '2025',
+    'parsedResumeDocument.experience.1.company': 'Kiggu',
+    'parsedResumeDocument.experience.1.title': 'Cybersecurity Reporting Assistant',
+    'parsedResumeDocument.experience.1.startDate': '2024'
+  },
+  rationale: [
+    'A single year with no range ("2025", not "2024 - 2025") is a real, common convention - especially timeline-style templates that put the year as its own label rather than inline with the role - and previously produced zero date signal at all, because extractDateRange only recognizes ranges.',
+    'The year is pulled out before company/title detection runs regardless of whether it sits before (first entry) or after (second entry) the role lines, so it never gets mistaken for a title/company candidate itself (the naive fix - just adding a single-date branch to the existing per-line loop - would have done exactly that when the year comes first, consuming the slot the real company/title lines needed).',
+    'Read as a start date, never a fabricated end date ("Present" is not implied) - matches this codebase\'s standing rule against inventing facts the source text does not state.'
+  ]
+});
+
+Scenario({
+  name: 'A dash-separated "Title — Company" line is read correctly, not just the "Company — Title" default',
+  given: {
+    resumeText: [
+      'Andres Hernandez',
+      '',
+      'Experience',
+      'AI & Product Developer — Ameliapp',
+      '- Building a React-based application',
+      '',
+      'Acme Corp — Frontend Developer',
+      '- Shipped the checkout redesign'
+    ].join('\n'),
+    jobText: ''
+  },
+  expect: {
+    'parsedResumeDocument.experience.0.title': 'AI & Product Developer',
+    'parsedResumeDocument.experience.0.company': 'Ameliapp',
+    'parsedResumeDocument.experience.1.company': 'Acme Corp',
+    'parsedResumeDocument.experience.1.title': 'Frontend Developer'
+  },
+  rationale: [
+    'The dash convention is genuinely ambiguous both ways in real resumes - "AI & Product Developer — Ameliapp" (title first) and "Acme Corp — Frontend Developer" (company first, the pre-existing default and every real fixture under examples/) both need to resolve correctly in the same pass.',
+    'A recognizable job-title keyword (Developer, Engineer, ...) on exactly one side is the signal used to pick the direction - every existing dash-separated fixture already has the keyword on the second side, so this is additive: it only changes the read when the keyword is on the first side instead, which used to always be misread as the company.'
+  ]
+});
+
+Scenario({
+  name: 'An unbulleted description paragraph is not mistaken for the job title, when it directly follows a real title with no connector',
+  given: {
+    resumeText: [
+      'Andres Hernandez',
+      '',
+      'Experience',
+      'Cybersecurity Reporting Assistant - Kiggu',
+      'One month of work experience identifying, analyzing and reporting clandestine virtual casinos to Coljuegos, the Colombian gaming regulator.'
+    ].join('\n'),
+    jobText: ''
+  },
+  expect: {
+    'parsedResumeDocument.experience.0.title': 'Cybersecurity Reporting Assistant - Kiggu',
+    'parsedResumeDocument.experience.0.bullets.length': '== 1'
+  },
+  rationale: [
+    'Previously, with no date and no bullet marker, the fallback positional guess blindly took the first 2 lines as company/title - swallowing this entire unbulleted sentence as if it were the second meta line, instead of recognizing it as the entry\'s (unbulleted) description.',
+    'A sentence-length line (many words, or ending in sentence punctuation) is not what a real company/title line looks like - it now stops the positional guess early and lands in bullets instead, even though it was never actually bulleted in the source text.'
+  ]
+});
+
+Scenario({
   name: 'An ambiguous experience entry (no connector, no date, no bullets) scores low parseConfidence',
   given: {
     resumeText: [

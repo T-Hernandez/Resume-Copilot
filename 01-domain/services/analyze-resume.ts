@@ -2,7 +2,7 @@ import { SkillInstance } from '../entities/skill';
 import { Experience } from '../entities/experience';
 import { Education } from '../entities/education';
 import { parseResumeDocument } from './parse-resume-document';
-import { totalExperienceYears } from '../matching/experience-duration';
+import { totalExperienceYears, experienceDurationYears } from '../matching/experience-duration';
 import { deterministicId } from './deterministic-id';
 
 // Same parseConfidence scale as Experience/Education (0..100, base 20 +
@@ -64,6 +64,22 @@ export function analyzeResumeOnly(input: AnalyzeResumeOnlyInput): ResumeInsight 
   if (lowConfidenceEducation > 0) {
     const noun = lowConfidenceEducation === 1 ? 'entry' : 'entries';
     warnings.push(`${lowConfidenceEducation} education ${noun} could not be confidently parsed - institution, degree, or dates may be missing or ambiguous`);
+  }
+
+  // An entry can state a date (e.g. a single year with no end, or vice
+  // versa) without stating enough to compute a duration -
+  // experienceDurationYears() correctly returns undefined rather than
+  // guessing (see matching/experience-duration.ts), but totalExperienceYears
+  // silently sums that as 0. Left unflagged, a resume with two real jobs and
+  // undated ends would read as "0 years of experience", which is a
+  // misleading claim, not an honest one - the same category of problem
+  // confidence: undefined already exists to avoid on the matched path.
+  const entriesWithUnknownDuration = parsed.experience.filter(
+    entry => (entry.startDate || entry.endDate) && experienceDurationYears(entry) === undefined
+  ).length;
+  if (entriesWithUnknownDuration > 0) {
+    const noun = entriesWithUnknownDuration === 1 ? 'entry' : 'entries';
+    warnings.push(`Could not compute a duration for ${entriesWithUnknownDuration} experience ${noun} - a start or end date is missing, so total experience may be understated`);
   }
 
   return {

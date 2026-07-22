@@ -55,6 +55,46 @@ Scenario({
 });
 
 Scenario({
+  name: 'analyzeResumeOnly warns that total experience may be understated instead of silently reporting 0 years, when entries state a year but no end date',
+  given: {
+    resumeText: [
+      'Andres Hernandez',
+      '',
+      'Skills',
+      'React',
+      '',
+      'Experience',
+      '2025',
+      'Company A',
+      'AI Product Developer',
+      '- Built a React app',
+      '',
+      '2024',
+      'Company B',
+      'Cybersecurity Assistant',
+      '- Reported clandestine casinos',
+      '',
+      'Education',
+      'State University',
+      "Bachelor's in Computer Science",
+      '2015 - 2019'
+    ].join('\n'),
+    jobText: ''
+  },
+  expect: {
+    'resumeInsight.experience.length': '== 2',
+    'resumeInsight.experience.0.startDate': '2025',
+    'resumeInsight.totalExperienceYears': '== 0',
+    'resumeInsight.warnings.length': '== 1',
+    'resumeInsight.warnings.0': 'Could not compute a duration for 2 experience entries - a start or end date is missing, so total experience may be understated'
+  },
+  rationale: [
+    'Two real, cleanly-parsed jobs (each stating only the year it started, no end date) previously summed to "0 years" with no explanation at all - indistinguishable from an actually-empty work history. That is a misleading claim, not an honest one, the exact category of problem confidence: undefined already exists to avoid on the matched path.',
+    'The warning fires only when an entry states *some* date but not enough to compute a duration - a fully dateless entry is already covered by the separate low-parseConfidence warning, so this does not double-warn about the same root cause.'
+  ]
+});
+
+Scenario({
   name: 'analyzeResumeOnly flags a genuinely missing section on an otherwise-populated resume, without claiming the resume is empty',
   given: {
     resumeText: [

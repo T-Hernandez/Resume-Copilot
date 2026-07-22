@@ -10,6 +10,12 @@ const TITLE_AT_COMPANY = /^(.+?)\s+(?:at|@)\s+(.+)$/i;
 // a separator).
 const COMPANY_DASH_TITLE = /^(.+?)\s*[—–]\s*(.+)$/;
 
+// Which side of a dash is the title is genuinely ambiguous - "Company —
+// Title" and "Title — Company" (e.g. "AI & Product Developer — Ameliapp")
+// both appear in real resumes. A recognizable job-title word is a real
+// signal for which side is which; not exhaustive, just the common roles.
+const TITLE_KEYWORDS = /\b(developer|engineer|manager|assistant|intern|director|analyst|designer|consultant|specialist|lead|officer|coordinator|founder|ceo|cto|cfo|coo|president|architect|scientist|researcher|technician|administrator|executive|supervisor|representative|associate|strategist|producer)\b/i;
+
 function splitEntryBlocks(sectionText: string): string[] {
   return sectionText
     .split(/\n\s*\n/)
@@ -37,7 +43,17 @@ function parseCompanyAndTitle(metaLines: string[]): CompanyAndTitle {
 
   for (const line of metaLines) {
     const dashMatch = line.match(COMPANY_DASH_TITLE);
-    if (dashMatch) return { company: dashMatch[1].trim(), title: dashMatch[2].trim(), fromExplicitConnector: true };
+    if (dashMatch) {
+      const [, first, second] = dashMatch;
+      // Only override the "Company — Title" default when a title keyword
+      // appears on exactly one side - if neither side (or both sides) has
+      // one, the read is still genuinely ambiguous, so the existing default
+      // order is kept rather than guessing further.
+      if (TITLE_KEYWORDS.test(first) && !TITLE_KEYWORDS.test(second)) {
+        return { title: first.trim(), company: second.trim(), fromExplicitConnector: true };
+      }
+      return { company: first.trim(), title: second.trim(), fromExplicitConnector: true };
+    }
   }
 
   // No connector found - fall back to positional convention:
@@ -72,8 +88,36 @@ function scoreExperienceConfidence(args: {
   return Math.min(100, score);
 }
 
+// A meta (company/title) line is normally short - a handful of words, no
+// sentence-ending punctuation. Only used for the no-date/no-bullet fallback
+// above, where nothing else already bounds where "meta" content ends.
+function looksLikeProse(line: string): boolean {
+  const wordCount = line.split(/\s+/).filter(Boolean).length;
+  return wordCount > 8 || /[.!?]$/.test(line);
+}
+
+// A line that is nothing but a 4-digit year (optionally parenthesized) -
+// the "2025" on its own line/label convention (common in timeline-style
+// templates), distinct from a full range ("2022 - 2024"). Deliberately
+// requires the WHOLE line to be just the year, not merely contain one - a
+// year mentioned inside a bullet ("grew revenue in 2025") is prose, not a
+// date field, and must be left alone.
+const BARE_YEAR_LINE = /^\(?(\d{4})\)?[.,;:]?$/;
+
 function parseEntry(block: string): Experience {
-  const rawLines = block.split('\n').map(line => line.trim()).filter(Boolean);
+  const rawLinesAll = block.split('\n').map(line => line.trim()).filter(Boolean);
+  if (!rawLinesAll.length) return {};
+
+  // Pulled out before anything else so it's never mistaken for a
+  // company/title candidate line, regardless of where it sits in the block
+  // (this template convention puts it before the role, not after). Read as
+  // a *start* date, not an end date: a lone year on an experience entry
+  // states when it began (especially for a current/most-recent role), the
+  // mirror image of parseEducationSection's bare graduation year, which is
+  // read as an end date instead.
+  const bareYearIndex = rawLinesAll.findIndex(line => BARE_YEAR_LINE.test(line));
+  const bareYearStart = bareYearIndex === -1 ? undefined : rawLinesAll[bareYearIndex].replace(/[().,;:]/g, '');
+  const rawLines = bareYearIndex === -1 ? rawLinesAll : rawLinesAll.filter((_, i) => i !== bareYearIndex);
   if (!rawLines.length) return {};
 
   // A bullet-prefixed line is a strong "this is body content, not meta"
@@ -84,7 +128,7 @@ function parseEntry(block: string): Experience {
   const isBulletLine = rawLines.map(line => BULLET_PREFIX.test(line));
   const lines = rawLines.map(stripBullet);
 
-  let startDate: string | undefined;
+  let startDate: string | undefined = bareYearStart;
   let endDate: string | undefined;
   let dateLineIndex = -1;
 
@@ -109,8 +153,14 @@ function parseEntry(block: string): Experience {
     metaEndIndex = firstBulletIndex - 1;
   } else {
     // No date, no bullets: assume the first couple of lines are
-    // company/title and anything else is descriptive content.
-    metaEndIndex = Math.min(lines.length, 2) - 1;
+    // company/title - but stop earlier if one of those two lines is
+    // clearly an unbulleted description paragraph rather than a real meta
+    // line (a company/title line is normally a handful of words; a
+    // sentence-length line that was never bulleted is body content that
+    // still needs to land in bullets, not get read as "the title").
+    const proseIndex = lines.findIndex(looksLikeProse);
+    const cap = proseIndex === -1 ? lines.length : proseIndex;
+    metaEndIndex = Math.min(cap, 2) - 1;
   }
 
   const metaLines = lines.slice(0, metaEndIndex + 1).filter(Boolean);
