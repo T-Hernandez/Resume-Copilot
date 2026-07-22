@@ -5,6 +5,7 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import { handleAnalyzeRequest, InvalidRequestError } from './analyze-handler';
 import { handleCompareRequest } from './compare-handler';
+import { handleAnalyzeResumeRequest } from './analyze-resume-handler';
 
 // 10mb accounts for base64-encoded PDF/DOCX bodies (base64 runs ~33% larger
 // than the source bytes) - plain-text resume/job bodies are a tiny fraction
@@ -58,6 +59,7 @@ export function createServer() {
   });
 
   app.post('/analyze', analysisRateLimit, handleRoute(handleAnalyzeRequest));
+  app.post('/analyze-resume', analysisRateLimit, handleRoute(handleAnalyzeResumeRequest));
   app.post('/compare', analysisRateLimit, handleRoute(handleCompareRequest));
 
   // The frontend (public/index.html + styles.css + app.js) - a thin,

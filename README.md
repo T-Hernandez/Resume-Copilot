@@ -92,7 +92,7 @@ Render builds `Dockerfile` directly - same container as `docker compose up` abov
 
 ```bash
 npm install
-npm run specs           # 0 failed / 52 total
+npm run specs           # 0 failed / 68 total
 npm run analyze -- examples/resume-sparse.txt examples/job-react-senior.txt
 npm run api              # starts the REST API on :3000
 ```
@@ -103,21 +103,28 @@ npm run api              # starts the REST API on :3000
 # Single resume vs. a single job
 npm run analyze -- <resume.(txt|pdf|docx)> <job.(txt|pdf|docx)> [--recommend]
 
+# Resume only, no job to compare against - see "What if there's no job posting?" below
+npm run analyze -- <resume.(txt|pdf|docx)>
+
 # Rank multiple resumes against one job
 npm run compare-resumes -- <job.(txt|pdf|docx)> <resume1> <resume2> [...more]
 ```
 
-`--recommend` adds an optional AI-enhanced recommendations section (requires `ANTHROPIC_API_KEY`) on top of the deterministic recommendations, which are always printed regardless.
+`--recommend` adds an optional AI-enhanced recommendations section (requires `ANTHROPIC_API_KEY`) on top of the deterministic recommendations, which are always printed regardless. It requires a job (there's nothing to recommend *against* without one).
+
+### What if there's no job posting?
+
+A candidate doesn't always have one specific posting to compare against. Omitting the job argument (CLI) or checking "I don't have a specific job posting" (web UI) switches to a different, honest mode: instead of a job-match score, you get what was actually extracted from the resume - skills, experience entries (with total years), education - plus warnings about anything the parser couldn't confidently read. There is deliberately no fabricated score here: a match score means nothing without requirements to measure it against. See [`01-domain/services/analyze-resume.ts`](01-domain/services/analyze-resume.ts).
 
 ## Web UI
 
-`GET /` serves `public/index.html` - a form to analyze one resume against one job (with the same bar-chart score breakdown the CLI prints), and a second tab to compare multiple resumes against one job, ranked. Paste text or upload a `.txt`/`.pdf`/`.docx` file directly in the browser - it's converted client-side and sent to the exact same `POST /analyze`/`POST /compare` endpoints documented below. No separate deployment, no framework, no build step: it's static files served by the same process.
+`GET /` serves `public/index.html` - a form to analyze one resume against one job (with the same bar-chart score breakdown the CLI prints, or the resume-only breakdown above if no job posting is given), and a second tab to compare multiple resumes against one job, ranked. Paste text or upload a `.txt`/`.pdf`/`.docx` file directly in the browser - it's converted client-side and sent to the exact same `POST /analyze`/`POST /analyze-resume`/`POST /compare` endpoints documented below. No separate deployment, no framework, no build step: it's static files served by the same process.
 
 ## API
 
 `GET /health` returns a static 200 for health checks - no domain logic, no request body.
 
-`/analyze` and `/compare` are both rate-limited (20 requests/minute/IP - both run a full scoring pipeline, and `/analyze` with `recommend: true` calls the paid Claude API, so a public deployment needs an abuse ceiling). Security headers (`helmet`) and gzip (`compression`) are applied to every response.
+`/analyze`, `/analyze-resume`, and `/compare` are all rate-limited (20 requests/minute/IP - each runs a real parsing/scoring pipeline, and `/analyze` with `recommend: true` calls the paid Claude API, so a public deployment needs an abuse ceiling). Security headers (`helmet`) and gzip (`compression`) are applied to every response.
 
 ### `POST /analyze`
 
@@ -133,6 +140,18 @@ curl -X POST http://localhost:3000/analyze \
 A resume/job can be `{"text": "..."}` or `{"base64": "...", "format": "pdf"|"docx"}` - PDF/DOCX go through the same extractor the CLI uses. Add `"recommend": true` to also get AI-enhanced recommendations (falls back to `recommendationError` on the response if Claude is unreachable or uncredentialed - the deterministic `analysis`/`explanation`/`recommendations` are still returned).
 
 Response: `{ analysis, explanation, recommendations, aiRecommendations?, recommendationError? }`.
+
+### `POST /analyze-resume`
+
+```bash
+curl -X POST http://localhost:3000/analyze-resume \
+  -H "Content-Type: application/json" \
+  -d '{"resume": {"text": "Skills: React\nExperience\nCompany A\nEngineer\n2022 - 2023"}}'
+```
+
+The no-job counterpart to `/analyze` - see "What if there's no job posting?" above. A separate endpoint with its own response shape rather than making `job` optional on `/analyze`, since there is no honest `overall`/`explanation`/`recommendations` to return without a job's requirements to measure against.
+
+Response: `{ insight: { resumeId, skills, experience, education, totalExperienceYears, warnings } }`.
 
 ### `POST /compare`
 
@@ -161,7 +180,7 @@ Runs the same `generateAnalysis()` pipeline once per candidate and ranks the res
 ## Testing
 
 ```bash
-npm run specs      # domain scenarios + infrastructure + API + service-layer + frontend specs (60 total)
+npm run specs      # domain scenarios + infrastructure + API + service-layer + frontend specs (68 total)
 npm run compare     # diagnostic: the old V1 engine vs. the current V2 engine on 22 real resume/job pairs
 ```
 

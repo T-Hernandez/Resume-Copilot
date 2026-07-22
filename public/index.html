@@ -41,7 +41,13 @@
             </label>
           </div>
           <div class="field">
-            <label for="analyze-job-text" data-i18n="analyze.jobLabel"></label>
+            <div class="field-header">
+              <label for="analyze-job-text" data-i18n="analyze.jobLabel"></label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="analyze-no-job" />
+                <span data-i18n="analyze.noJobToggle"></span>
+              </label>
+            </div>
             <textarea id="analyze-job-text" rows="10" data-i18n-placeholder="analyze.pasteJob"></textarea>
             <label class="file-label">
               <span data-i18n="analyze.uploadHint"></span>

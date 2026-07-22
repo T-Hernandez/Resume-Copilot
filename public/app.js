@@ -119,14 +119,83 @@ function renderAnalysisResult(result) {
     </div>`;
 }
 
+// The no-job counterpart to renderAnalysisResult: there is no overall
+// score/breakdown to show (see analyze-resume.ts's own reasoning on the
+// backend) - this shows what was actually extracted from the document
+// instead of a comparison that has nothing to compare against.
+function renderResumeInsight(insight) {
+  const list = (items, formatItem) => items.length
+    ? items.map(item => `<li>${formatItem(item)}</li>`).join('')
+    : `<li class="muted">${t('results.noneDetected')}</li>`;
+
+  const skillsList = list(insight.skills, skill => {
+    const label = escapeHtml(skill.canonical || skill.raw);
+    const tag = skill.category ? `<span class="tag">${escapeHtml(skill.category)}</span>` : '';
+    return `${label}${tag}`;
+  });
+
+  const experienceList = list(insight.experience, entry => {
+    const title = [entry.title, entry.company].filter(Boolean).join(` ${t('results.at')} `) || t('results.untitledEntry');
+    const dates = entry.startDate ? ` (${escapeHtml(entry.startDate)} - ${escapeHtml(entry.endDate || '?')})` : '';
+    return `${escapeHtml(title)}${dates}`;
+  });
+
+  const educationList = list(insight.education, entry => {
+    const label = [entry.degree, entry.institution].filter(Boolean).join(' - ') || t('results.untitledEntry');
+    return escapeHtml(label);
+  });
+
+  const warnings = insight.warnings && insight.warnings.length
+    ? `<p class="status error">${insight.warnings.map(escapeHtml).join(' - ')}</p>`
+    : '';
+
+  return `
+    <div class="result-card">
+      <div class="result-header">
+        <h2>${t('results.insightTitle')}</h2>
+        <span class="confidence">${t('results.totalExperience')}: ${insight.totalExperienceYears} ${t('results.years')}</span>
+      </div>
+      ${warnings}
+      <div class="insight-section">
+        <h3>${t('categories.skills')}</h3>
+        <ul class="fact-list">${skillsList}</ul>
+      </div>
+      <div class="insight-section">
+        <h3>${t('categories.experience')}</h3>
+        <ul class="fact-list">${experienceList}</ul>
+      </div>
+      <div class="insight-section">
+        <h3>${t('categories.education')}</h3>
+        <ul class="fact-list">${educationList}</ul>
+      </div>
+    </div>`;
+}
+
+// Dispatches on which endpoint produced the stored result, so a language
+// switch re-render (see the languagechange-app listener below) renders
+// whichever shape is actually on screen.
+function renderAnalyzeOutput(result) {
+  return result.mode === 'insight' ? renderResumeInsight(result.body.insight) : renderAnalysisResult(result.body);
+}
+
 // --- Analyze tab ---
 
 const analyzeForm = document.getElementById('analyze-form');
 const analyzeStatus = document.getElementById('analyze-status');
 const analyzeResults = document.getElementById('analyze-results');
+const analyzeNoJobToggle = document.getElementById('analyze-no-job');
+const analyzeJobText = document.getElementById('analyze-job-text');
+const analyzeJobFile = document.getElementById('analyze-job-file');
 // Kept so a language switch after a result is already on screen can
-// re-render it in the new language without re-calling the API.
+// re-render it in the new language without re-calling the API. Shape:
+// { mode: 'match' | 'insight', body }.
 let lastAnalyzeResult = null;
+
+analyzeNoJobToggle.addEventListener('change', () => {
+  const noJob = analyzeNoJobToggle.checked;
+  analyzeJobText.disabled = noJob;
+  analyzeJobFile.disabled = noJob;
+});
 
 analyzeForm.addEventListener('submit', async event => {
   event.preventDefault();
@@ -138,15 +207,25 @@ analyzeForm.addEventListener('submit', async event => {
     document.getElementById('analyze-resume-text'),
     document.getElementById('analyze-resume-file')
   );
-  const job = await resolveDocument(
-    document.getElementById('analyze-job-text'),
-    document.getElementById('analyze-job-file')
-  );
+  const noJob = analyzeNoJobToggle.checked;
 
-  if (isEmptyDocument(resume) || isEmptyDocument(job)) {
-    analyzeStatus.textContent = t('analyze.statusMissing');
+  if (isEmptyDocument(resume)) {
+    analyzeStatus.textContent = t(noJob ? 'analyze.statusMissingResumeOnly' : 'analyze.statusMissing');
     analyzeStatus.className = 'status error';
     return;
+  }
+
+  let job;
+  if (!noJob) {
+    job = await resolveDocument(
+      document.getElementById('analyze-job-text'),
+      document.getElementById('analyze-job-file')
+    );
+    if (isEmptyDocument(job)) {
+      analyzeStatus.textContent = t('analyze.statusMissing');
+      analyzeStatus.className = 'status error';
+      return;
+    }
   }
 
   analyzeStatus.textContent = t('analyze.statusAnalyzing');
@@ -154,16 +233,16 @@ analyzeForm.addEventListener('submit', async event => {
   submitButton.disabled = true;
 
   try {
-    const response = await fetch('/analyze', {
+    const response = await fetch(noJob ? '/analyze-resume' : '/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ resume, job })
+      body: JSON.stringify(noJob ? { resume } : { resume, job })
     });
     const body = await response.json();
     if (!response.ok) throw new Error(body.error || t('errors.requestFailed', { status: response.status }));
     analyzeStatus.textContent = '';
-    lastAnalyzeResult = body;
-    analyzeResults.innerHTML = renderAnalysisResult(body);
+    lastAnalyzeResult = { mode: noJob ? 'insight' : 'match', body };
+    analyzeResults.innerHTML = renderAnalyzeOutput(lastAnalyzeResult);
   } catch (error) {
     analyzeStatus.textContent = error.message;
     analyzeStatus.className = 'status error';
@@ -281,7 +360,7 @@ compareForm.addEventListener('submit', async event => {
 // i18n.js dispatches this after applying static translations - re-render
 // only what's already on screen, in the new language, without re-fetching.
 window.addEventListener('languagechange-app', () => {
-  if (lastAnalyzeResult) analyzeResults.innerHTML = renderAnalysisResult(lastAnalyzeResult);
+  if (lastAnalyzeResult) analyzeResults.innerHTML = renderAnalyzeOutput(lastAnalyzeResult);
   if (lastCompareResult) compareResults.innerHTML = renderCompareResults(lastCompareResult);
 });
 
@@ -291,6 +370,12 @@ window.addEventListener('languagechange-app', () => {
 // up their own resume text before they even know what the page does.
 
 document.getElementById('analyze-example').addEventListener('click', () => {
+  // The example demonstrates the job-match path specifically, so it resets
+  // the no-job toggle rather than leaving it in whatever state the visitor
+  // last left it in.
+  analyzeNoJobToggle.checked = false;
+  analyzeJobText.disabled = false;
+  analyzeJobFile.disabled = false;
   document.getElementById('analyze-resume-text').value = SAMPLE_DATA.analyze.resume;
   document.getElementById('analyze-resume-file').value = '';
   document.getElementById('analyze-job-text').value = SAMPLE_DATA.analyze.job;

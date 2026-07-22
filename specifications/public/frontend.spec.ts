@@ -167,6 +167,46 @@ async function run(): Promise<void> {
     dom.window.close();
   });
 
+  await check('checking "no specific job posting" disables the job field and posts to /analyze-resume', async () => {
+    const dom = await loadPage();
+    const { document } = dom.window;
+    (document.getElementById('analyze-resume-text') as HTMLTextAreaElement).value = 'Skills: React';
+
+    const noJobCheckbox = document.getElementById('analyze-no-job') as HTMLInputElement;
+    noJobCheckbox.checked = true;
+    noJobCheckbox.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+    const jobText = document.getElementById('analyze-job-text') as HTMLTextAreaElement;
+    if (!jobText.disabled) throw new Error('expected the job textarea to be disabled once "no job" is checked');
+
+    let requestedUrl = '';
+    (dom.window as any).fetch = async (url: string) => {
+      requestedUrl = url;
+      return {
+        ok: true,
+        json: async () => ({
+          insight: {
+            resumeId: 'r1',
+            skills: [{ raw: 'React', canonical: 'react' }],
+            experience: [],
+            education: [],
+            totalExperienceYears: 0,
+            warnings: []
+          }
+        })
+      };
+    };
+
+    document.getElementById('analyze-form')!.dispatchEvent(new dom.window.Event('submit', { cancelable: true, bubbles: true }));
+    await waitFor(() => document.getElementById('analyze-results')!.innerHTML.length > 0);
+    if (requestedUrl !== '/analyze-resume') throw new Error(`expected a POST to /analyze-resume, got: ${requestedUrl}`);
+    const resultsHtml = document.getElementById('analyze-results')!.innerHTML;
+    if (!resultsHtml.toLowerCase().includes('react')) throw new Error(`expected the extracted skill in rendered output, got: ${resultsHtml}`);
+    if (resultsHtml.includes('undefined') || resultsHtml.includes('NaN')) {
+      throw new Error(`resume-only render leaked an undefined/NaN field: ${resultsHtml}`);
+    }
+    dom.window.close();
+  });
+
   console.log(failed === 0 ? '\nAll frontend checks passed.' : `\n${failed} frontend check(s) failed.`);
   if (failed > 0) process.exit(1);
 }

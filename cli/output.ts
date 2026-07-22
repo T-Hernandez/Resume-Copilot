@@ -1,6 +1,7 @@
 import { Analysis } from '../01-domain/entities/analysis';
 import { Recommendation } from '../01-domain/value-objects/recommendation';
 import { CategoryExplanation } from '../01-domain/services/build-score-explanation';
+import { ResumeInsight } from '../01-domain/services/analyze-resume';
 
 // confidence is `undefined` (not 0) when nothing was actually evaluated -
 // see generate-analysis-v2.ts. The CLI reflects that distinction rather
@@ -73,6 +74,50 @@ export function printAnalysis(analysis: Analysis, explanation: CategoryExplanati
 
   if (analysis.warnings && analysis.warnings.length) {
     printSection('Warnings', analysis.warnings);
+  }
+}
+
+// The resume-only counterpart to printAnalysis: no job means no overall
+// score/breakdown to print (see analyze-resume.ts's own reasoning) - this
+// prints what was actually understood from the document instead.
+export function printResumeInsight(insight: ResumeInsight): void {
+  console.log('Resume Copilot - Resume Insight (no job posting given)');
+  console.log('='.repeat(40));
+  console.log(`Total experience: ${insight.totalExperienceYears} year${insight.totalExperienceYears === 1 ? '' : 's'}`);
+
+  console.log('\nSkills:');
+  if (!insight.skills.length) {
+    console.log('  (none detected)');
+  } else {
+    for (const skill of insight.skills) {
+      const label = skill.canonical || skill.raw;
+      console.log(`  - ${label}${skill.category ? ` (${skill.category})` : ''}`);
+    }
+  }
+
+  console.log('\nExperience:');
+  if (!insight.experience.length) {
+    console.log('  (none detected)');
+  } else {
+    for (const entry of insight.experience) {
+      const title = [entry.title, entry.company].filter(Boolean).join(' at ') || '(untitled entry)';
+      const dates = entry.startDate ? ` (${entry.startDate} - ${entry.endDate || '?'})` : '';
+      console.log(`  - ${title}${dates}`);
+    }
+  }
+
+  console.log('\nEducation:');
+  if (!insight.education.length) {
+    console.log('  (none detected)');
+  } else {
+    for (const entry of insight.education) {
+      const label = [entry.degree, entry.institution].filter(Boolean).join(' - ') || '(untitled entry)';
+      console.log(`  - ${label}`);
+    }
+  }
+
+  if (insight.warnings.length) {
+    printSection('Warnings', insight.warnings);
   }
 }
 

@@ -1,10 +1,11 @@
 import { generateAnalysis } from '../01-domain/services/generate-analysis';
 import { buildRecommendationInput } from '../01-domain/services/build-recommendation-input';
 import { buildDeterministicRecommendations } from '../01-domain/services/build-recommendations';
+import { analyzeResumeOnly } from '../01-domain/services/analyze-resume';
 import { ClaudeRecommendationGenerator } from '../infrastructure/claude-recommendation-generator';
 import { DEFAULT_PIPELINE_CONFIG } from '../config/default-pipeline-config';
 import { parseArguments } from './arguments';
-import { printAnalysis, printRecommendations } from './output';
+import { printAnalysis, printRecommendations, printResumeInsight } from './output';
 import { readResumeOrJobText } from './read-document';
 
 // First public interface consuming the domain (Ubiquitous-Language.md's
@@ -23,6 +24,17 @@ async function main(): Promise<void> {
   }
 
   const resumeText = await readResumeOrJobText(args.resumePath);
+
+  // No job posting given: run the Parser stage only and report what was
+  // understood from the resume, instead of a comparison that has nothing to
+  // compare against. See 01-domain/services/analyze-resume.ts.
+  if (!args.jobPath) {
+    const insight = analyzeResumeOnly({ resumeText, resumeId: args.resumePath });
+    printResumeInsight(insight);
+    console.log('');
+    return;
+  }
+
   const jobText = await readResumeOrJobText(args.jobPath);
 
   const { analysis, explanation } = generateAnalysis({

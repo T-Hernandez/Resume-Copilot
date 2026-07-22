@@ -21,9 +21,11 @@ const translations = {
       pasteResume: "Paste resume text here...",
       pasteJob: "Paste job posting text here...",
       uploadHint: "or upload a file (.txt, .pdf, .docx)",
+      noJobToggle: "I don't have a specific job posting",
       submit: "Analyze",
       statusAnalyzing: "Analyzing...",
-      statusMissing: "Paste or upload both a resume and a job posting first."
+      statusMissing: "Paste or upload both a resume and a job posting first.",
+      statusMissingResumeOnly: "Paste or upload a resume first."
     },
     compare: {
       addCandidate: "+ Add another resume",
@@ -45,7 +47,13 @@ const translations = {
       recommendations: "Recommendations",
       aiRecommendations: "AI-enhanced recommendations",
       recommendationErrorPrefix: "AI-enhanced recommendations unavailable: ",
-      missingSuffix: "(missing)"
+      missingSuffix: "(missing)",
+      insightTitle: "What we found in this resume",
+      totalExperience: "Total experience",
+      years: "years",
+      noneDetected: "None detected",
+      untitledEntry: "Untitled entry",
+      at: "at"
     },
     categories: { skills: "Skills", experience: "Experience", education: "Education" },
     errors: { requestFailed: "Request failed ({status})" }
@@ -65,9 +73,11 @@ const translations = {
       pasteResume: "Pega el texto del CV aquí...",
       pasteJob: "Pega el texto de la oferta aquí...",
       uploadHint: "o sube un archivo (.txt, .pdf, .docx)",
+      noJobToggle: "No tengo una oferta laboral específica",
       submit: "Analizar",
       statusAnalyzing: "Analizando...",
-      statusMissing: "Pega o sube tanto el CV como la oferta laboral primero."
+      statusMissing: "Pega o sube tanto el CV como la oferta laboral primero.",
+      statusMissingResumeOnly: "Pega o sube un CV primero."
     },
     compare: {
       addCandidate: "+ Agregar otro CV",
@@ -89,7 +99,13 @@ const translations = {
       recommendations: "Recomendaciones",
       aiRecommendations: "Recomendaciones mejoradas con IA",
       recommendationErrorPrefix: "Recomendaciones con IA no disponibles: ",
-      missingSuffix: "(falta)"
+      missingSuffix: "(falta)",
+      insightTitle: "Esto encontramos en el CV",
+      totalExperience: "Experiencia total",
+      years: "años",
+      noneDetected: "No detectado",
+      untitledEntry: "Entrada sin título",
+      at: "en"
     },
     categories: { skills: "Habilidades", experience: "Experiencia", education: "Educación" },
     errors: { requestFailed: "La solicitud falló ({status})" }

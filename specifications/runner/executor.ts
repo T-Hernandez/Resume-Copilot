@@ -16,6 +16,7 @@ import { generateAnalysisV2 } from '../../01-domain/services/generate-analysis-v
 import { generateAnalysisV1, parseResumeTextV1, parseJobTextV1 } from '../../01-domain/services/generate-analysis-v1';
 import { buildRecommendationInput } from '../../01-domain/services/build-recommendation-input';
 import { buildDeterministicRecommendations } from '../../01-domain/services/build-recommendations';
+import { analyzeResumeOnly } from '../../01-domain/services/analyze-resume';
 import { PipelineConfig } from '../../01-domain/entities/pipeline-config';
 
 type Given = { resumePath?: string; jobPath?: string; resumeText?: string; jobText?: string; pipelineConfig?: any };
@@ -101,6 +102,9 @@ export async function runScenario(given: Given) {
   // Deterministic recommendation baseline (no LLM) - exposed so specs can
   // verify it directly, same pattern as recommendationInput above.
   const deterministicRecommendations = buildDeterministicRecommendations(recommendationInput);
+  // The no-job counterpart: what parseResumeDocument found, with no
+  // matching/scoring against a job's requirements - see analyze-resume.ts.
+  const resumeInsight = analyzeResumeOnly({ resumeText });
 
   const resume = parseResumeSimple(resumeText);
   const job = parseJobSimple(jobText);
@@ -164,6 +168,7 @@ export async function runScenario(given: Given) {
     analysisV2: analysisV2.analysis,
     recommendationInput,
     deterministicRecommendations,
+    resumeInsight,
     // Same reasoning as recommendationInput above - exposed so specs can
     // verify the per-category grouping directly, independent of any
     // CLI/API rendering (which does not exist in the domain layer).

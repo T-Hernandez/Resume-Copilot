@@ -19,6 +19,7 @@ import './../scenarios/build-strengths.scenario';
 import './../scenarios/build-recommendation-input.scenario';
 import './../scenarios/build-score-explanation.scenario';
 import './../scenarios/build-recommendations.scenario';
+import './../scenarios/analyze-resume.scenario';
 import { runAll } from './runner';
 
 runAll().catch(err => {
