@@ -207,6 +207,34 @@ async function run(): Promise<void> {
     dom.window.close();
   });
 
+  await check('a corrupt/unreadable upload shows the server\'s plain-language error, not a silent failure', async () => {
+    // Mirrors what the API now returns for a corrupt PDF/DOCX upload (see
+    // api/request-document.ts) - confirms the frontend's existing
+    // response.ok/body.error handling surfaces it in analyze-status instead
+    // of only working for the happy path.
+    const dom = await loadPage();
+    const { document } = dom.window;
+    (document.getElementById('analyze-resume-text') as HTMLTextAreaElement).value = 'Skills: React';
+    (document.getElementById('analyze-job-text') as HTMLTextAreaElement).value = 'Required Skills: React';
+
+    (dom.window as any).fetch = async () => ({
+      ok: false,
+      status: 400,
+      json: async () => ({ error: 'Could not read this PDF file - it may be corrupted, empty, or not a valid PDF file.' })
+    });
+
+    document.getElementById('analyze-form')!.dispatchEvent(new dom.window.Event('submit', { cancelable: true, bubbles: true }));
+    await waitFor(() => document.getElementById('analyze-status')!.textContent!.length > 0);
+    const statusText = document.getElementById('analyze-status')!.textContent!;
+    if (!statusText.includes('Could not read this PDF file')) {
+      throw new Error(`expected the server's error message in analyze-status, got: ${statusText}`);
+    }
+    if (document.getElementById('analyze-results')!.innerHTML.length > 0) {
+      throw new Error('expected no results to render when the request failed');
+    }
+    dom.window.close();
+  });
+
   console.log(failed === 0 ? '\nAll frontend checks passed.' : `\n${failed} frontend check(s) failed.`);
   if (failed > 0) process.exit(1);
 }

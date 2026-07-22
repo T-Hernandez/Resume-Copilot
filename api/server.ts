@@ -1,5 +1,5 @@
 import * as path from 'path';
-import express, { Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
@@ -71,6 +71,29 @@ export function createServer() {
   // files served from the same process that already answers /analyze and
   // /compare, so nothing about deployment (Docker, Render) needed to change.
   app.use(express.static(path.join(__dirname, '..', 'public')));
+
+  // Express's default error page for a body-parser failure (malformed JSON,
+  // a body over JSON_BODY_LIMIT, wrong Content-Type) is an HTML stack trace,
+  // including local filesystem paths - fine for local dev, an information
+  // leak and an ugly dead end for a public deployment. body-parser's own
+  // errors (via http-errors) carry the right HTTP status already (400 for a
+  // parse failure, 413 for over-limit) - reused here rather than guessed.
+  // Registered last, as Express requires for error-handling middleware (the
+  // 4-arg signature is what marks it as one, even though _req/_next go
+  // unused).
+  app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+    const status = err && typeof err === 'object' && 'status' in err ? (err as { status?: unknown }).status : undefined;
+    if (status === 400) {
+      res.status(400).json({ error: 'Request body is not valid JSON' });
+      return;
+    }
+    if (status === 413) {
+      res.status(413).json({ error: `Request body is too large (max ${JSON_BODY_LIMIT})` });
+      return;
+    }
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  });
 
   return app;
 }

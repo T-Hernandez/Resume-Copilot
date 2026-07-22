@@ -65,7 +65,32 @@ async function run(): Promise<void> {
     if (!threw) throw new Error('expected InvalidRequestError for a non-string resumeId');
   });
 
-  console.log(`\nDone. ${failed} failed / 4 total.`);
+  await check('handleAnalyzeResumeRequest rejects a corrupt/non-PDF upload with a clear InvalidRequestError, not a raw parser crash', async () => {
+    const base64 = Buffer.from('this is not a real PDF, just plain text').toString('base64');
+    let threw = false;
+    let message = '';
+    try {
+      await handleAnalyzeResumeRequest({ resume: { base64, format: 'pdf' } });
+    } catch (err) {
+      threw = err instanceof InvalidRequestError;
+      message = err instanceof Error ? err.message : String(err);
+    }
+    if (!threw) throw new Error(`expected InvalidRequestError for a corrupt PDF upload, got: ${message}`);
+    if (!/PDF/.test(message)) throw new Error(`expected the error message to mention PDF, got: ${message}`);
+  });
+
+  await check('handleAnalyzeResumeRequest rejects a corrupt/non-DOCX upload with a clear InvalidRequestError, not a raw parser crash', async () => {
+    const base64 = Buffer.from('this is not a real DOCX, just plain text').toString('base64');
+    let threw = false;
+    try {
+      await handleAnalyzeResumeRequest({ resume: { base64, format: 'docx' } });
+    } catch (err) {
+      threw = err instanceof InvalidRequestError;
+    }
+    if (!threw) throw new Error('expected InvalidRequestError for a corrupt DOCX upload');
+  });
+
+  console.log(`\nDone. ${failed} failed / 6 total.`);
   if (failed > 0) process.exit(2);
 }
 

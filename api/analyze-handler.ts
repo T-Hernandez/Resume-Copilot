@@ -6,15 +6,15 @@ import { Recommendation } from '../01-domain/value-objects/recommendation';
 import { CategoryExplanation } from '../01-domain/services/build-score-explanation';
 import { ClaudeRecommendationGenerator } from '../infrastructure/claude-recommendation-generator';
 import { DEFAULT_PIPELINE_CONFIG } from '../config/default-pipeline-config';
-import { RequestDocument, resolveDocumentText, isRequestDocument } from './request-document';
+import { RequestDocument, resolveDocumentText, isRequestDocument, InvalidRequestError } from './request-document';
 
 // Second consumer of the domain (cli/analyze.ts is the first) - same rule
 // applies: this only calls generateAnalysis()/buildRecommendationInput() and
 // shapes the result for HTTP, no domain logic lives here.
 
-// Thrown only for malformed requests, so server.ts can map it to 400
-// without the handler needing to know about HTTP status codes itself.
-export class InvalidRequestError extends Error {}
+// Re-exported for backward compatibility - see request-document.ts for why
+// this now lives there instead.
+export { InvalidRequestError };
 
 export interface AnalyzeRequestBody {
   resume: RequestDocument;

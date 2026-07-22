@@ -92,7 +92,7 @@ Render builds `Dockerfile` directly - same container as `docker compose up` abov
 
 ```bash
 npm install
-npm run specs           # 0 failed / 77 total
+npm run specs           # 0 failed / 83 total
 npm run analyze -- examples/resume-sparse.txt examples/job-react-senior.txt
 npm run api              # starts the REST API on :3000
 ```
@@ -180,7 +180,7 @@ Runs the same `generateAnalysis()` pipeline once per candidate and ranks the res
 ## Testing
 
 ```bash
-npm run specs      # domain scenarios + infrastructure + API + service-layer + frontend specs (77 total)
+npm run specs      # domain scenarios + infrastructure + API + service-layer + frontend specs (83 total)
 npm run compare     # diagnostic: the old V1 engine vs. the current V2 engine on 22 real resume/job pairs
 ```
 

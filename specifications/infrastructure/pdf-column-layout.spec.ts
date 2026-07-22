@@ -20,6 +20,12 @@ import { parseResumeDocument } from '../../01-domain/services/parse-resume-docum
 // reconstructs by each item's real (x, y) position, not by whatever order
 // they happen to appear in the file.
 const PDF_FIXTURE = path.resolve(__dirname, '../../examples/resume-two-column-test.pdf');
+// Mirror image of PDF_FIXTURE: sidebar on the RIGHT, main content on the
+// LEFT. Proves reconstructColumnAwareText's "more text = primary column"
+// choice is genuinely position-agnostic, not accidentally tuned to the
+// left-sidebar shape that happened to be the real resume this fix was
+// originally built against.
+const RIGHT_SIDEBAR_PDF_FIXTURE = path.resolve(__dirname, '../../examples/resume-two-column-right-sidebar-test.pdf');
 
 async function run(): Promise<void> {
   let failed = 0;
@@ -89,6 +95,30 @@ async function run(): Promise<void> {
     }
   });
 
+  await check('extractTextFromPdf reconstructs the main column first even when the sidebar sits on the right, not the left', async () => {
+    const buffer = fs.readFileSync(RIGHT_SIDEBAR_PDF_FIXTURE);
+    const text = await extractTextFromPdf(buffer);
+    const parsed = parseResumeDocument(text);
+
+    if (parsed.experience.length !== 2) {
+      throw new Error(`expected 2 experience entries, got ${parsed.experience.length}: ${JSON.stringify(parsed.experience)}`);
+    }
+    const [first, second] = parsed.experience;
+    if (first.company !== 'Nimbus Labs' || first.title !== 'Backend Engineer' || first.startDate !== '2023') {
+      throw new Error(`expected first entry Nimbus Labs / Backend Engineer / 2023, got: ${JSON.stringify(first)}`);
+    }
+    if (second.company !== 'Vertex Systems' || second.title !== 'Support Engineer' || second.startDate !== '2020') {
+      throw new Error(`expected second entry Vertex Systems / Support Engineer / 2020, got: ${JSON.stringify(second)}`);
+    }
+    if (parsed.education.length !== 1 || parsed.education[0].institution !== 'State University') {
+      throw new Error(`expected 1 education entry (State University), got: ${JSON.stringify(parsed.education)}`);
+    }
+    const experienceText = JSON.stringify(parsed.experience);
+    if (experienceText.includes('CONTACT') || experienceText.includes('CERTIFICATIONS') || experienceText.includes('jordan@example.com')) {
+      throw new Error(`right-hand sidebar content leaked into experience entries: ${experienceText}`);
+    }
+  });
+
   await check('reconstructLines splits a line into separate cells at a wide same-row gap, instead of joining unrelated content with one space', () => {
     // Reproduces a real skills "grid" measured on an actual resume: two
     // unrelated pieces of content (a skill list, and an unrelated note)
@@ -115,7 +145,7 @@ async function run(): Promise<void> {
     }
   });
 
-  console.log(`\nDone. ${failed} failed / 4 total.`);
+  console.log(`\nDone. ${failed} failed / 5 total.`);
   if (failed > 0) process.exit(2);
 }
 

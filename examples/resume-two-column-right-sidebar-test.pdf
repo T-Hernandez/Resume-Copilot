@@ -1,0 +1,48 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> /MediaBox [0 0 612 792] /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 707 >>
+stream
+BT /F1 10 Tf
+1 0 0 1 50 750 Tm (Jordan Blake) Tj
+1 0 0 1 450 700 Tm (CONTACT) Tj
+1 0 0 1 50 725 Tm (EXPERIENCE) Tj
+1 0 0 1 450 675 Tm (jordan@example.com) Tj
+1 0 0 1 50 700 Tm (2023 Backend Engineer at Nimbus Labs) Tj
+1 0 0 1 450 650 Tm (Skill: Linux) Tj
+1 0 0 1 50 675 Tm (Built internal tooling for the platform team.) Tj
+1 0 0 1 50 650 Tm (Reduced deploy time by half.) Tj
+1 0 0 1 50 610 Tm (2020 Support Engineer at Vertex Systems) Tj
+1 0 0 1 50 585 Tm (Handled customer escalations.) Tj
+1 0 0 1 450 600 Tm (CERTIFICATIONS) Tj
+1 0 0 1 50 545 Tm (EDUCATION) Tj
+1 0 0 1 450 575 Tm (Cloud Practitioner \(2021\)) Tj
+1 0 0 1 50 520 Tm (2019 BSc Computer Science) Tj
+1 0 0 1 50 495 Tm (State University) Tj
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000311 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1069
+%%EOF

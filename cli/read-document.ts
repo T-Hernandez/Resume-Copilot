@@ -14,11 +14,19 @@ export async function readResumeOrJobText(filePath: string): Promise<string> {
   }
 
   const extension = path.extname(resolved).toLowerCase();
-  if (extension === '.pdf') {
-    return extractTextFromPdf(fs.readFileSync(resolved));
-  }
-  if (extension === '.docx') {
-    return extractTextFromDocx(fs.readFileSync(resolved));
+  if (extension === '.pdf' || extension === '.docx') {
+    try {
+      const buffer = fs.readFileSync(resolved);
+      return await (extension === '.pdf' ? extractTextFromPdf(buffer) : extractTextFromDocx(buffer));
+    } catch {
+      // pdf-parse/mammoth throw their own low-level parser errors (bad
+      // header, truncated structure, etc.) on bytes that do not decode as a
+      // real file of that extension - a plain-language message and a clean
+      // exit beats a raw parser stack trace, same reasoning as the API's
+      // equivalent handling in request-document.ts.
+      console.error(`Could not read ${filePath} - it may be corrupted, empty, or not a valid ${extension.slice(1).toUpperCase()} file.`);
+      process.exit(1);
+    }
   }
   return fs.readFileSync(resolved, 'utf8');
 }
