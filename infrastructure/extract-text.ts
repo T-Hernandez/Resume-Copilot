@@ -1,6 +1,7 @@
 import { PDFParse } from 'pdf-parse';
 import * as mammoth from 'mammoth';
 import { PositionedItem, reconstructColumnAwareText, reconstructLines } from './pdf-column-layout';
+import { htmlToStructuredText } from './docx-structured-text';
 
 // Second infrastructure-layer concern, same boundary as
 // claude-recommendation-generator.ts: raw file-format extraction is not
@@ -93,6 +94,12 @@ export async function extractTextFromPdf(buffer: Buffer): Promise<string> {
 }
 
 export async function extractTextFromDocx(buffer: Buffer): Promise<string> {
-  const result = await mammoth.extractRawText({ buffer });
-  return result.value;
+  // Not mammoth's own extractRawText() - it joins every paragraph with a
+  // blank line unconditionally, which turns a real bulleted job description
+  // into one orphaned "entry" per bullet. ignoreEmptyParagraphs: false keeps
+  // a genuinely empty paragraph in the output (as <p></p>) instead of
+  // mammoth's default of silently dropping it - the one recoverable signal
+  // for "a real break belongs here". See docx-structured-text.ts.
+  const result = await mammoth.convertToHtml({ buffer }, { ignoreEmptyParagraphs: false });
+  return htmlToStructuredText(result.value);
 }

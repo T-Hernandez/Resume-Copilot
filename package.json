@@ -4,7 +4,7 @@
   "license": "MIT",
   "scripts": {
     "specs": "node --require ts-node/register/transpile-only specifications/runner/run-all.ts && npm run specs:infra && npm run specs:api && npm run specs:services && npm run specs:public",
-    "specs:infra": "node --require ts-node/register/transpile-only specifications/infrastructure/extract-text.spec.ts && node --require ts-node/register/transpile-only specifications/infrastructure/pdf-column-layout.spec.ts",
+    "specs:infra": "node --require ts-node/register/transpile-only specifications/infrastructure/extract-text.spec.ts && node --require ts-node/register/transpile-only specifications/infrastructure/pdf-column-layout.spec.ts && node --require ts-node/register/transpile-only specifications/infrastructure/docx-structured-text.spec.ts",
     "specs:api": "node --require ts-node/register/transpile-only specifications/api/analyze-handler.spec.ts && node --require ts-node/register/transpile-only specifications/api/compare-handler.spec.ts && node --require ts-node/register/transpile-only specifications/api/analyze-resume-handler.spec.ts && node --require ts-node/register/transpile-only specifications/api/server-error-handling.spec.ts",
     "specs:services": "node --require ts-node/register/transpile-only specifications/services/compare-resumes.spec.ts",
     "specs:public": "node --require ts-node/register/transpile-only specifications/public/frontend.spec.ts",
