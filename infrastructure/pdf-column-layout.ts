@@ -35,6 +35,18 @@ const LINE_THRESHOLD = 4.6;
 // single run would run together.
 const CELL_THRESHOLD = 2;
 
+// Two items on the same line separated by more than this many points are
+// treated as separate cells (broken into their own output lines) instead of
+// being joined at all - a layout like a multi-item skills "grid" places
+// unrelated content side by side at the same Y, which is a break much like
+// the page-level column gutter but local to just a few rows, so
+// detectColumnGutter's whole-column band scan does not (and should not)
+// catch it. Calibrated against a real resume's own side-by-side skills
+// grid: the largest genuine same-phrase gap measured ~8pt (a timeline
+// leading-year label, e.g. "2024   Cybersecurity Diploma"), while the grid's
+// real cell boundaries measured 30-57pt - this sits well between the two.
+const WIDE_GAP_THRESHOLD = 15;
+
 // A column gutter must be at least this fraction of the page width to
 // count as a real layout boundary, not just ordinary word/paragraph
 // spacing within a single column of text.
@@ -129,16 +141,22 @@ export function reconstructLines(items: PositionedItem[]): string[] {
   }
   if (current.length) lineGroups.push(current);
 
-  const lineTexts = lineGroups.map(group => {
+  // Each line-group can itself resolve to more than one output line - see
+  // WIDE_GAP_THRESHOLD above.
+  const lineCells = lineGroups.map(group => {
     group.sort((a, b) => a.x - b.x);
-    let result = '';
+    const cells: string[] = [''];
     let lastEndX: number | undefined;
     for (const item of group) {
-      if (lastEndX !== undefined && item.x - lastEndX > CELL_THRESHOLD) result += ' ';
-      result += item.str;
+      if (lastEndX !== undefined) {
+        const gap = item.x - lastEndX;
+        if (gap > WIDE_GAP_THRESHOLD) cells.push('');
+        else if (gap > CELL_THRESHOLD) cells[cells.length - 1] += ' ';
+      }
+      cells[cells.length - 1] += item.str;
       lastEndX = item.x + item.width;
     }
-    return result.trim();
+    return cells.map(cell => cell.trim()).filter(Boolean);
   });
 
   const lineYs = lineGroups.map(group => group[0].y);
@@ -147,15 +165,15 @@ export function reconstructLines(items: PositionedItem[]): string[] {
   const medianGap = sortedGaps.length ? sortedGaps[Math.floor(sortedGaps.length / 2)] : 0;
 
   const output: string[] = [];
-  lineTexts.forEach((text, index) => {
-    if (!text) return;
+  lineCells.forEach((cells, index) => {
+    if (!cells.length) return;
     if (index > 0 && medianGap > 0) {
       const gap = lineYs[index] - lineYs[index - 1];
       if (gap > medianGap * PARAGRAPH_BREAK_MULTIPLIER && output.length && output[output.length - 1] !== '') {
         output.push('');
       }
     }
-    output.push(text);
+    output.push(...cells);
   });
   return output;
 }

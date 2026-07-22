@@ -145,12 +145,14 @@ Scenario({
     jobText: ''
   },
   expect: {
-    'parsedResumeDocument.experience.0.title': 'Cybersecurity Reporting Assistant - Kiggu',
+    'parsedResumeDocument.experience.0.title': 'Cybersecurity Reporting Assistant',
+    'parsedResumeDocument.experience.0.company': 'Kiggu',
     'parsedResumeDocument.experience.0.bullets.length': '== 1'
   },
   rationale: [
     'Previously, with no date and no bullet marker, the fallback positional guess blindly took the first 2 lines as company/title - swallowing this entire unbulleted sentence as if it were the second meta line, instead of recognizing it as the entry\'s (unbulleted) description.',
-    'A sentence-length line (many words, or ending in sentence punctuation) is not what a real company/title line looks like - it now stops the positional guess early and lands in bullets instead, even though it was never actually bulleted in the source text.'
+    'A sentence-length line (many words, or ending in sentence punctuation) is not what a real company/title line looks like - it now stops the positional guess early and lands in bullets instead, even though it was never actually bulleted in the source text.',
+    'The meta line itself ("Cybersecurity Reporting Assistant - Kiggu") also now splits into title/company: a plain hyphen padded by whitespace on both sides is accepted as a separator (COMPANY_HYPHEN_TITLE) - a compound-word hyphen like "Front-end Developer" never has surrounding spaces, so this does not collide with the reason the plain-hyphen case was originally excluded from COMPANY_DASH_TITLE.'
   ]
 });
 

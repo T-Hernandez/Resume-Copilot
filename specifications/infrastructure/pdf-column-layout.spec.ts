@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { extractTextFromPdf } from '../../infrastructure/extract-text';
+import { reconstructLines } from '../../infrastructure/pdf-column-layout';
 import { parseResumeDocument } from '../../01-domain/services/parse-resume-document';
 
 // Real-world regression coverage for infrastructure/pdf-column-layout.ts:
@@ -88,7 +89,33 @@ async function run(): Promise<void> {
     }
   });
 
-  console.log(`\nDone. ${failed} failed / 3 total.`);
+  await check('reconstructLines splits a line into separate cells at a wide same-row gap, instead of joining unrelated content with one space', () => {
+    // Reproduces a real skills "grid" measured on an actual resume: two
+    // unrelated pieces of content (a skill list, and an unrelated note)
+    // sitting on the same Y but ~30-57pt apart horizontally - far past any
+    // genuine same-phrase word gap (~8pt at most, even for a leading-year
+    // label). Left group mimics "Python, Go, Javascript"; right group
+    // mimics an unrelated "Focus on data analysis" note placed well to the
+    // right on the same row.
+    const items = [
+      { str: 'Python,', x: 285, y: 700, width: 43 },
+      { str: 'Go,', x: 331, y: 700, width: 20 },
+      { str: 'Javascript', x: 354, y: 700, width: 57 },
+      { str: 'Focus', x: 441, y: 699, width: 33 }
+    ];
+    const lines = reconstructLines(items);
+    if (!lines.includes('Python, Go, Javascript')) {
+      throw new Error(`expected the left-hand cell "Python, Go, Javascript" as its own line, got: ${JSON.stringify(lines)}`);
+    }
+    if (!lines.includes('Focus')) {
+      throw new Error(`expected "Focus" split into its own line, not joined onto the skills cell, got: ${JSON.stringify(lines)}`);
+    }
+    if (lines.some(line => line.includes('Javascript Focus'))) {
+      throw new Error(`unrelated same-row content got joined into one line: ${JSON.stringify(lines)}`);
+    }
+  });
+
+  console.log(`\nDone. ${failed} failed / 4 total.`);
   if (failed > 0) process.exit(2);
 }
 

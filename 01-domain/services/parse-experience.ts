@@ -11,6 +11,12 @@ const TITLE_AT_COMPANY = /^(.+?)\s+(?:at|@)\s+(.+)$/i;
 // a separator).
 const COMPANY_DASH_TITLE = /^(.+?)\s*[—–]\s*(.+)$/;
 
+// "Cybersecurity Reporting Assistant - Kiggu" - a plain hyphen, but padded
+// by whitespace on both sides, which a compound-word hyphen ("Front-end")
+// never is. Checked only after COMPANY_DASH_TITLE finds no typographic dash,
+// so a real em/en-dash line is never reinterpreted here.
+const COMPANY_HYPHEN_TITLE = /^(.+?)\s+-\s+(.+)$/;
+
 // Which side of a dash is the title is genuinely ambiguous - "Company —
 // Title" and "Title — Company" (e.g. "AI & Product Developer — Ameliapp")
 // both appear in real resumes. A recognizable job-title word is a real
@@ -35,18 +41,20 @@ function parseCompanyAndTitle(metaLines: string[]): CompanyAndTitle {
     if (atMatch) return { title: atMatch[1].trim(), company: atMatch[2].trim(), fromExplicitConnector: true };
   }
 
-  for (const line of metaLines) {
-    const dashMatch = line.match(COMPANY_DASH_TITLE);
-    if (dashMatch) {
-      const [, first, second] = dashMatch;
-      // Only override the "Company — Title" default when a title keyword
-      // appears on exactly one side - if neither side (or both sides) has
-      // one, the read is still genuinely ambiguous, so the existing default
-      // order is kept rather than guessing further.
-      if (TITLE_KEYWORDS.test(first) && !TITLE_KEYWORDS.test(second)) {
-        return { title: first.trim(), company: second.trim(), fromExplicitConnector: true };
+  for (const dashPattern of [COMPANY_DASH_TITLE, COMPANY_HYPHEN_TITLE]) {
+    for (const line of metaLines) {
+      const dashMatch = line.match(dashPattern);
+      if (dashMatch) {
+        const [, first, second] = dashMatch;
+        // Only override the "Company — Title" default when a title keyword
+        // appears on exactly one side - if neither side (or both sides) has
+        // one, the read is still genuinely ambiguous, so the existing default
+        // order is kept rather than guessing further.
+        if (TITLE_KEYWORDS.test(first) && !TITLE_KEYWORDS.test(second)) {
+          return { title: first.trim(), company: second.trim(), fromExplicitConnector: true };
+        }
+        return { company: first.trim(), title: second.trim(), fromExplicitConnector: true };
       }
-      return { company: first.trim(), title: second.trim(), fromExplicitConnector: true };
     }
   }
 
@@ -83,11 +91,16 @@ function scoreExperienceConfidence(args: {
 }
 
 // A meta (company/title) line is normally short - a handful of words, no
-// sentence-ending punctuation. Only used for the no-date/no-bullet fallback
-// above, where nothing else already bounds where "meta" content ends.
+// sentence-ending (or mid-sentence, wrapped-line) punctuation. Only used for
+// the no-date/no-bullet fallback above, where nothing else already bounds
+// where "meta" content ends. Trailing comma counts too: a real company/title
+// line never ends in one, but a long sentence that a column-narrow PDF
+// wrapped across several physical lines often does ("...identifying,\n
+// analyzing and reporting...") - without it, a short wrapped fragment reads
+// as a short, punctuation-free "title" instead of the description it is.
 function looksLikeProse(line: string): boolean {
   const wordCount = line.split(/\s+/).filter(Boolean).length;
-  return wordCount > 8 || /[.!?]$/.test(line);
+  return wordCount > 8 || /[.,!?]$/.test(line);
 }
 
 // A line that is nothing but a 4-digit year (optionally parenthesized) -
